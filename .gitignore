@@ -216,3 +216,35 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── ACTA Specific ──────────────────────────────────────────
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database files
+*.db
+*.db-journal
+
+# Docker volumes
+postgres_data/
+redis_data/
+ollama_data/
+
+# Frontend build
+apps/frontend/dist/
+apps/frontend/node_modules/
+
+# Generated text from PDF
+master_context.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,22 @@
+# Docker Compose Development Overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  backend:
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend:/app
+
+  celery-worker:
+    command: >
+      watchfiles --filter python
+      'celery -A app.scheduler.worker worker --loglevel=debug --concurrency=1 --pool=solo'
+    volumes:
+      - ./apps/backend:/app
+
+  celery-beat:
+    volumes:
+      - ./apps/backend:/app

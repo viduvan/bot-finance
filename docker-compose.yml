@@ -1,0 +1,211 @@
+# ============================================================
+# ACTA - Docker Compose (Development)
+# Human-in-the-Loop Multi-Agent Crypto Trading Advisory System
+# ============================================================
+#
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose logs -f backend # Follow backend logs
+#   docker compose down           # Stop all services
+#
+# Default mode: PAPER_TRADING (safe, no real trades)
+# ============================================================
+
+services:
+
+  # ── Backend API ────────────────────────────────────────────
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: acta-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://acta:acta_secret@postgres:5432/acta
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - TRADING_MODE=PAPER
+      - LOG_LEVEL=debug
+    env_file:
+      - .env
+    volumes:
+      - ./apps/backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Celery Worker ──────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: acta-celery-worker
+    command: >
+      celery -A app.scheduler.worker worker
+      --loglevel=info
+      --concurrency=2
+      --pool=prefork
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://acta:acta_secret@postgres:5432/acta
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - TRADING_MODE=PAPER
+    env_file:
+      - .env
+    volumes:
+      - ./apps/backend:/app
+    depends_on:
+      - backend
+      - redis
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Celery Beat (Scheduler) ────────────────────────────────
+  celery-beat:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: acta-celery-beat
+    command: >
+      celery -A app.scheduler.worker beat
+      --loglevel=info
+      --schedule=/tmp/celerybeat-schedule
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://acta:acta_secret@postgres:5432/acta
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - TRADING_MODE=PAPER
+    env_file:
+      - .env
+    volumes:
+      - ./apps/backend:/app
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: acta-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: acta
+      POSTGRES_PASSWORD: acta_secret
+      POSTGRES_DB: acta
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acta -d acta"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Redis ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: acta-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Ollama (Local LLM) ────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: acta-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Prometheus ─────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: acta-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+  # ── Grafana ────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: acta-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=acta_grafana
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - acta-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  acta-network:
+    driver: bridge

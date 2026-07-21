@@ -1,0 +1,214 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "System Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "acta_system_up",
+          "legendFormat": "System"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" } }, "type": "value" },
+            { "options": { "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Binance WebSocket",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [
+        {
+          "expr": "acta_binance_ws_connected",
+          "legendFormat": "WebSocket"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "DISCONNECTED", "color": "red" } }, "type": "value" },
+            { "options": { "1": { "text": "CONNECTED", "color": "green" } }, "type": "value" }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Daily Drawdown %",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "acta_daily_drawdown_percent",
+          "legendFormat": "Drawdown"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": -5,
+          "max": 0,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": -1 },
+              { "color": "red", "value": -2 }
+            ]
+          },
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "title": "Proposals Created",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(acta_proposals_created_total)",
+          "legendFormat": "Total"
+        }
+      ]
+    },
+    {
+      "title": "Active Proposals",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "acta_proposals_active",
+          "legendFormat": "Active"
+        }
+      ]
+    },
+    {
+      "title": "Risk Rejections",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(acta_risk_rejections_total)",
+          "legendFormat": "Total"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "orange" }
+        }
+      }
+    },
+    {
+      "title": "Proposals Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(acta_proposals_created_total[5m])",
+          "legendFormat": "Created ({{symbol}})"
+        },
+        {
+          "expr": "rate(acta_proposals_approved_total[5m])",
+          "legendFormat": "Approved ({{symbol}})"
+        },
+        {
+          "expr": "rate(acta_proposals_rejected_total[5m])",
+          "legendFormat": "Rejected ({{symbol}})"
+        }
+      ]
+    },
+    {
+      "title": "Agent Workflow Duration (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(acta_agent_workflow_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{symbol}}"
+        },
+        {
+          "expr": "histogram_quantile(0.50, rate(acta_agent_workflow_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50 {{symbol}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "title": "LLM Token Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(acta_llm_tokens_total[5m])",
+          "legendFormat": "{{provider}} - {{direction}}"
+        }
+      ]
+    },
+    {
+      "title": "LLM Cost (Cumulative USD)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "acta_llm_cost_usd_total",
+          "legendFormat": "{{provider}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD" }
+      }
+    },
+    {
+      "title": "Orders",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "rate(acta_orders_submitted_total[5m])",
+          "legendFormat": "Submitted {{symbol}}"
+        },
+        {
+          "expr": "rate(acta_orders_filled_total[5m])",
+          "legendFormat": "Filled {{symbol}}"
+        },
+        {
+          "expr": "rate(acta_orders_failed_total[5m])",
+          "legendFormat": "Failed {{symbol}}"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Request Duration (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(acta_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{method}} {{endpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["acta", "trading"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "ACTA Trading System",
+  "uid": "acta-main"
+}
