@@ -1,7 +1,7 @@
-"""Market data API endpoints.
+"""API endpoints dữ liệu thị trường.
 
-REST endpoints for candles, tickers, order book, snapshots,
-data quality, and exchange info.
+Các REST endpoints cho nến (candles), tickers, sổ lệnh (order book), ảnh chụp nhanh (snapshots),
+chất lượng dữ liệu và thông tin sàn.
 """
 
 from __future__ import annotations
@@ -33,18 +33,18 @@ def _get_market_service(db: DBSession) -> MarketDataService:
     return MarketDataService(db)
 
 
-# ── Candles ──────────────────────────────────────────────────────
+# ── Nến (Candles) ──────────────────────────────────────────────────────
 
 
 @router.get("/candles", response_model=CandleListResponse)
 async def get_candles(
     user: CurrentUser,
     db: DBSession,
-    symbol: str = Query(default="BTCUSDT", description="Trading pair"),
-    timeframe: str = Query(default="15m", description="Candle timeframe"),
+    symbol: str = Query(default="BTCUSDT", description="Cặp giao dịch"),
+    timeframe: str = Query(default="15m", description="Khung thời gian nến"),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> CandleListResponse:
-    """Get OHLCV candle data from database."""
+    """Lấy dữ liệu nến OHLCV từ cơ sở dữ liệu."""
     service = _get_market_service(db)
     candles = await service.get_candles(symbol, timeframe, limit)
 
@@ -79,7 +79,7 @@ async def fetch_candles(
     timeframe: str = Query(default="15m"),
     limit: int = Query(default=500, ge=1, le=1000),
 ) -> dict:
-    """Fetch candles from Binance and store in database (manual trigger)."""
+    """Lấy dữ liệu nến từ Binance và lưu vào cơ sở dữ liệu (kích hoạt thủ công)."""
     service = _get_market_service(db)
     result = await service.fetch_and_store_candles(symbol, timeframe, limit)
     return {
@@ -97,7 +97,7 @@ async def initial_data_load(
     db: DBSession,
     symbol: str = Query(default="BTCUSDT"),
 ) -> dict:
-    """Load initial historical data for all timeframes (manual trigger)."""
+    """Tải dữ liệu lịch sử ban đầu cho tất cả các khung thời gian (kích hoạt thủ công)."""
     service = _get_market_service(db)
     results = await service.initial_data_load(symbol)
     return {"status": "ok", "symbol": symbol, "results": results}
@@ -111,7 +111,7 @@ async def get_ticker(
     symbol: str,
     user: CurrentUser,
 ) -> TickerResponse:
-    """Get real-time ticker price from Binance."""
+    """Lấy giá ticker theo thời gian thực từ Binance."""
     data = await binance_client.get_ticker_24h(symbol)
     bid = data["bid"]
     ask = data["ask"]
@@ -133,7 +133,7 @@ async def get_ticker(
     )
 
 
-# ── Order Book ───────────────────────────────────────────────────
+# ── Sổ lệnh (Order Book) ───────────────────────────────────────────────────
 
 
 @router.get("/orderbook/{symbol}", response_model=OrderBookResponse)
@@ -142,7 +142,7 @@ async def get_order_book(
     user: CurrentUser,
     limit: int = Query(default=20, ge=5, le=500),
 ) -> OrderBookResponse:
-    """Get order book depth from Binance."""
+    """Lấy độ sâu sổ lệnh từ Binance."""
     data = await binance_client.get_depth(symbol, limit)
     return OrderBookResponse(
         symbol=symbol,
@@ -153,7 +153,7 @@ async def get_order_book(
     )
 
 
-# ── Snapshots ────────────────────────────────────────────────────
+# ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────────
 
 
 @router.get("/snapshot/{symbol}", response_model=MarketSnapshotResponse | None)
@@ -162,11 +162,11 @@ async def get_latest_snapshot(
     user: CurrentUser,
     db: DBSession,
 ) -> MarketSnapshotResponse | dict:
-    """Get the latest market snapshot from database."""
+    """Lấy ảnh chụp nhanh thị trường gần nhất từ cơ sở dữ liệu."""
     service = _get_market_service(db)
     snapshot = await service.get_latest_snapshot(symbol)
     if not snapshot:
-        return {"message": f"No snapshot available for {symbol}. Trigger /snapshot/{symbol}/refresh first."}
+        return {"message": f"Không có ảnh chụp nhanh cho {symbol}. Hãy kích hoạt /snapshot/{symbol}/refresh trước."}
     return MarketSnapshotResponse(**snapshot)
 
 
@@ -176,7 +176,7 @@ async def refresh_snapshot(
     user: CurrentUser,
     db: DBSession,
 ) -> dict:
-    """Build a fresh market snapshot from Binance (manual trigger)."""
+    """Tạo một ảnh chụp nhanh thị trường mới từ Binance (kích hoạt thủ công)."""
     service = _get_market_service(db)
     snapshot = await service.build_and_save_snapshot(symbol)
     return {
@@ -188,7 +188,7 @@ async def refresh_snapshot(
     }
 
 
-# ── Data Quality ─────────────────────────────────────────────────
+# ── Chất lượng dữ liệu ─────────────────────────────────────────────────
 
 
 @router.get("/quality/{symbol}")
@@ -198,7 +198,7 @@ async def check_data_quality(
     db: DBSession,
     timeframe: str = Query(default="15m"),
 ) -> dict:
-    """Check data quality for a symbol/timeframe."""
+    """Kiểm tra chất lượng dữ liệu cho một cặp giao dịch/khung thời gian."""
     service = _get_market_service(db)
     return await service.check_data_quality(symbol, timeframe)
 
@@ -211,12 +211,12 @@ async def backfill_gaps(
     timeframe: str = Query(default="15m"),
     hours_back: int = Query(default=24, ge=1, le=168),
 ) -> dict:
-    """Backfill candle data gaps from Binance REST API."""
+    """Điền (backfill) dữ liệu nến bị thiếu từ Binance REST API."""
     service = _get_market_service(db)
     return await service.backfill_gaps(symbol, timeframe, hours_back)
 
 
-# ── Exchange Info ────────────────────────────────────────────────
+# ── Thông tin sàn (Exchange Info) ────────────────────────────────────────────────
 
 
 @router.get("/exchange-info/{symbol}", response_model=SymbolInfo)
@@ -224,6 +224,6 @@ async def get_exchange_info(
     symbol: str,
     user: CurrentUser,
 ) -> SymbolInfo:
-    """Get trading rules for a symbol from Binance."""
+    """Lấy quy tắc giao dịch của một cặp tiền từ Binance."""
     info = await binance_client.get_exchange_info(symbol)
     return SymbolInfo(**info)

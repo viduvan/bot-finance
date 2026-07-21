@@ -1,10 +1,10 @@
-"""WebSocket endpoint for real-time market data streaming to frontend.
+"""Endpoint WebSocket cho luồng dữ liệu thị trường trực tiếp tới frontend.
 
-Frontend connects to /api/v1/ws/market and receives:
-- ticker updates (price, volume)
-- kline updates (candle data)
+Frontend kết nối tới /api/v1/ws/market và nhận được:
+- cập nhật ticker (giá, khối lượng)
+- cập nhật kline (dữ liệu nến)
 
-Authentication via token query parameter.
+Xác thực thông qua tham số truy vấn (query parameter) token.
 """
 
 from __future__ import annotations
@@ -28,50 +28,50 @@ async def market_websocket(
     ws: WebSocket,
     token: str = Query(default=""),
 ) -> None:
-    """WebSocket endpoint for real-time market data.
+    """Endpoint WebSocket cho dữ liệu thị trường thời gian thực.
 
-    Frontend connects with: ws://host/api/v1/ws/market?token=JWT_TOKEN
+    Frontend kết nối qua: ws://host/api/v1/ws/market?token=JWT_TOKEN
 
-    Messages sent to client:
+    Tin nhắn gửi cho client:
     - {"type": "ticker", "symbol": "BTCUSDT", "price": "50000.00", ...}
     - {"type": "kline", "symbol": "BTCUSDT", "close": "50000.00", "is_closed": true, ...}
-    - {"type": "ping"} — keepalive
+    - {"type": "ping"} — giữ kết nối (keepalive)
     """
-    # Authenticate
+    # Xác thực (Authenticate)
     if not token:
-        await ws.close(code=4001, reason="Missing token")
+        await ws.close(code=4001, reason="Thiếu token (Missing token)")
         return
 
     try:
         payload = decode_token(token)
         if payload.get("type") != "access":
-            await ws.close(code=4001, reason="Invalid token type")
+            await ws.close(code=4001, reason="Loại token không hợp lệ")
             return
     except AuthenticationError:
-        await ws.close(code=4001, reason="Invalid token")
+        await ws.close(code=4001, reason="Token không hợp lệ (Invalid token)")
         return
 
     await ws.accept()
     logger.info("ws_client_connected", user_id=payload.get("sub"))
 
-    # Register client for broadcasts from Binance WS manager
+    # Đăng ký client để nhận broadcast từ Binance WS manager
     ws_manager.register_frontend_client(ws)
 
     try:
-        # Send initial connection confirmation
+        # Gửi xác nhận kết nối ban đầu
         await ws.send_json({
             "type": "connected",
-            "message": "Market data stream active",
+            "message": "Luồng dữ liệu thị trường đã kích hoạt",
         })
 
-        # Keep connection alive with periodic pings
-        # Also listen for client messages (e.g. subscribe/unsubscribe)
+        # Giữ kết nối (Keepalive) bằng các ping định kỳ
+        # Đồng thời lắng nghe các tin nhắn từ client (vd: subscribe/unsubscribe)
         while True:
             try:
-                # Wait for client messages with timeout for keepalive
+                # Chờ tin nhắn từ client kèm theo timeout để gửi keepalive
                 data = await asyncio.wait_for(ws.receive_text(), timeout=30.0)
 
-                # Handle client commands
+                # Xử lý các lệnh từ client
                 try:
                     msg = json.loads(data)
                     cmd = msg.get("type")
@@ -79,14 +79,14 @@ async def market_websocket(
                     if cmd == "ping":
                         await ws.send_json({"type": "pong"})
                     elif cmd == "subscribe":
-                        # Future: per-symbol subscription
+                        # Tương lai: đăng ký theo từng cặp tiền (per-symbol)
                         await ws.send_json({"type": "subscribed", "symbols": msg.get("symbols", [])})
 
                 except json.JSONDecodeError:
                     pass
 
             except asyncio.TimeoutError:
-                # Send keepalive ping
+                # Gửi ping giữ kết nối
                 try:
                     await ws.send_json({"type": "ping"})
                 except Exception:

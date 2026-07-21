@@ -1,10 +1,10 @@
 """Binance REST API client.
 
-Async HTTP client for Binance REST API with:
-- Rate limiting (1200 weight/min)
-- Automatic testnet/mainnet switching
-- Error handling with retries
-- Exchange info caching
+Client HTTP bất đồng bộ cho Binance REST API với:
+- Giới hạn tốc độ (Rate limiting: 1200 weight/phút)
+- Tự động chuyển đổi giữa testnet/mainnet
+- Xử lý lỗi với cơ chế thử lại (retries)
+- Lưu cache thông tin sàn (exchange info)
 """
 
 from __future__ import annotations
@@ -28,14 +28,14 @@ from app.core.exceptions import BinanceConnectionError, StaleDataError
 
 logger = structlog.get_logger(__name__)
 
-# Binance API weight tracking
+# Theo dõi dung lượng (weight) API Binance
 _weight_used: int = 0
 _weight_reset_time: datetime | None = None
-_WEIGHT_LIMIT = 1200  # Per minute
+_WEIGHT_LIMIT = 1200  # Mỗi phút
 
 
 class BinanceRestClient:
-    """Async Binance REST API client with rate limiting."""
+    """Client bất đồng bộ cho Binance REST API có giới hạn tốc độ."""
 
     def __init__(self) -> None:
         self._client: httpx.AsyncClient | None = None
@@ -66,10 +66,10 @@ class BinanceRestClient:
     async def _request(
         self, method: str, path: str, params: dict | None = None, weight: int = 1
     ) -> dict | list:
-        """Make a rate-limited request to Binance API."""
+        """Gửi request có giới hạn tốc độ tới Binance API."""
         global _weight_used, _weight_reset_time
 
-        # Simple rate limiting
+        # Giới hạn tốc độ đơn giản
         now = datetime.now(UTC)
         if _weight_reset_time is None or (now - _weight_reset_time).total_seconds() >= 60:
             _weight_used = 0
@@ -88,7 +88,7 @@ class BinanceRestClient:
         try:
             response = await client.request(method, path, params=params)
 
-            # Track weight from headers
+            # Theo dõi weight từ headers
             used_weight = response.headers.get("x-mbx-used-weight-1m")
             if used_weight:
                 _weight_used = int(used_weight)
@@ -97,7 +97,7 @@ class BinanceRestClient:
                 retry_after = int(response.headers.get("Retry-After", 60))
                 logger.error("binance_rate_limited", retry_after=retry_after)
                 await asyncio.sleep(retry_after)
-                raise httpx.ReadTimeout("Rate limited")
+                raise httpx.ReadTimeout("Bị giới hạn tốc độ (Rate limited)")
 
             response.raise_for_status()
             return response.json()
@@ -109,7 +109,7 @@ class BinanceRestClient:
             logger.error("binance_connection_failed", error=str(e))
             raise
 
-    # ── Public Market Data ───────────────────────────────────────
+    # ── Dữ liệu thị trường công khai ─────────────────────────────
 
     async def get_klines(
         self,
@@ -119,10 +119,10 @@ class BinanceRestClient:
         start_time: int | None = None,
         end_time: int | None = None,
     ) -> list[dict]:
-        """Fetch OHLCV candlestick data.
+        """Lấy dữ liệu nến OHLCV.
 
-        Returns list of candle dicts with standardized keys.
-        Weight: 2 for limit <= 100, 5 for <= 500, 10 for <= 1000.
+        Trả về danh sách các dict nến với key chuẩn hóa.
+        Weight: 2 nếu limit <= 100, 5 nếu <= 500, 10 nếu <= 1000.
         """
         params: dict[str, Any] = {
             "symbol": symbol,
@@ -153,7 +153,7 @@ class BinanceRestClient:
         return candles
 
     async def get_ticker_price(self, symbol: str) -> dict:
-        """Get current price for a symbol. Weight: 2."""
+        """Lấy giá hiện tại cho một cặp giao dịch. Weight: 2."""
         data = await self._request("GET", "/api/v3/ticker/price", params={"symbol": symbol}, weight=2)
         return {
             "symbol": data["symbol"],
@@ -162,7 +162,7 @@ class BinanceRestClient:
         }
 
     async def get_ticker_24h(self, symbol: str) -> dict:
-        """Get 24h ticker statistics. Weight: 2."""
+        """Lấy thống kê ticker trong 24h qua. Weight: 2."""
         data = await self._request("GET", "/api/v3/ticker/24hr", params={"symbol": symbol}, weight=2)
         return {
             "symbol": data["symbol"],
@@ -183,7 +183,7 @@ class BinanceRestClient:
         }
 
     async def get_book_ticker(self, symbol: str) -> dict:
-        """Get best bid/ask for a symbol. Weight: 2."""
+        """Lấy giá bid/ask tốt nhất cho một cặp giao dịch. Weight: 2."""
         data = await self._request("GET", "/api/v3/ticker/bookTicker", params={"symbol": symbol}, weight=2)
         bid = Decimal(str(data["bidPrice"]))
         ask = Decimal(str(data["askPrice"]))
@@ -201,7 +201,7 @@ class BinanceRestClient:
         }
 
     async def get_depth(self, symbol: str, limit: int = 20) -> dict:
-        """Get order book depth. Weight: 5 for limit=20, 10 for 50, 50 for 500."""
+        """Lấy độ sâu sổ lệnh. Weight: 5 cho limit=20, 10 cho 50, 50 cho 500."""
         weight = 5 if limit <= 20 else (10 if limit <= 50 else 50)
         data = await self._request("GET", "/api/v3/depth", params={"symbol": symbol, "limit": limit}, weight=weight)
         return {
@@ -213,7 +213,7 @@ class BinanceRestClient:
         }
 
     async def get_exchange_info(self, symbol: str | None = None, force_refresh: bool = False) -> dict:
-        """Get exchange trading rules. Weight: 20. Cached for 1 hour."""
+        """Lấy quy tắc giao dịch của sàn. Weight: 20. Lưu cache trong 1 giờ."""
         now = datetime.now(UTC)
         if (
             not force_refresh
@@ -240,7 +240,7 @@ class BinanceRestClient:
         return data
 
     def _parse_symbol_info(self, raw: dict) -> dict:
-        """Parse symbol info from exchange info response."""
+        """Phân tích thông tin cặp tiền từ phản hồi exchange info."""
         info: dict[str, Any] = {
             "symbol": raw["symbol"],
             "status": raw["status"],
@@ -263,16 +263,16 @@ class BinanceRestClient:
         return info
 
     async def get_server_time(self) -> datetime:
-        """Get Binance server time. Weight: 1."""
+        """Lấy thời gian máy chủ Binance. Weight: 1."""
         data = await self._request("GET", "/api/v3/time", weight=1)
         return datetime.fromtimestamp(data["serverTime"] / 1000, tz=UTC)
 
     async def close(self) -> None:
-        """Close the HTTP client."""
+        """Đóng kết nối HTTP client."""
         if self._client and not self._client.is_closed:
             await self._client.aclose()
             self._client = None
 
 
-# Singleton instance
+# Instance dùng chung (Singleton)
 binance_client = BinanceRestClient()

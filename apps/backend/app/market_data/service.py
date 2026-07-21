@@ -1,7 +1,7 @@
-"""Market data service — orchestration layer.
+"""Dịch vụ dữ liệu thị trường — Lớp điều phối (orchestration layer).
 
-Coordinates between REST client, WebSocket manager, repository,
-validator, and snapshot builder to provide a unified market data API.
+Phối hợp giữa REST client, WebSocket manager, repository, validator, và 
+snapshot builder để cung cấp một API dữ liệu thị trường thống nhất.
 """
 
 from __future__ import annotations
@@ -26,14 +26,14 @@ logger = structlog.get_logger(__name__)
 
 
 class MarketDataService:
-    """High-level market data service.
+    """Dịch vụ dữ liệu thị trường cấp cao.
 
-    Provides:
-    - Initial data fetch and backfill
-    - Candle storage and retrieval
-    - Snapshot management
-    - Data quality monitoring
-    - Gap detection and backfill
+    Cung cấp:
+    - Tải dữ liệu ban đầu và điền dữ liệu còn thiếu (backfill)
+    - Lưu trữ và truy xuất nến (candles)
+    - Quản lý ảnh chụp nhanh (snapshot)
+    - Giám sát chất lượng dữ liệu
+    - Phát hiện khoảng trống (gaps) và điền bổ sung
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class MarketDataService:
         self._snapshot_builder = SnapshotBuilder(self._client)
         self.db = db
 
-    # ── Initial Data Load ────────────────────────────────────────
+    # ── Tải dữ liệu ban đầu ────────────────────────────────────────
 
     async def fetch_and_store_candles(
         self,
@@ -58,11 +58,11 @@ class MarketDataService:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
     ) -> dict:
-        """Fetch candles from Binance REST API and store in database.
+        """Lấy nến từ Binance REST API và lưu vào cơ sở dữ liệu.
 
-        Returns dict with count and quality report.
+        Trả về dict chứa số lượng (count) và báo cáo chất lượng (quality report).
         """
-        # Convert datetime to millisecond timestamps
+        # Chuyển đổi datetime sang timestamp millisecond
         start_ms = int(start_time.timestamp() * 1000) if start_time else None
         end_ms = int(end_time.timestamp() * 1000) if end_time else None
 
@@ -75,12 +75,12 @@ class MarketDataService:
         )
 
         if not candles:
-            return {"count": 0, "quality": {"is_healthy": False, "warnings": ["No data returned"]}}
+            return {"count": 0, "quality": {"is_healthy": False, "warnings": ["Không có dữ liệu trả về"]}}
 
-        # Validate data quality
+        # Kiểm tra chất lượng dữ liệu
         quality = self._validator.validate_candles(candles, symbol, timeframe)
 
-        # Store in database
+        # Lưu vào cơ sở dữ liệu
         count = await self._repo.upsert_candles(symbol, timeframe, candles)
 
         logger.info(
@@ -95,9 +95,9 @@ class MarketDataService:
         return {"count": count, "quality": quality}
 
     async def initial_data_load(self, symbol: str) -> dict:
-        """Load initial historical data for a symbol across all timeframes.
+        """Tải dữ liệu lịch sử ban đầu cho một cặp giao dịch trên tất cả các khung thời gian.
 
-        Fetches 500 candles per timeframe (most recent).
+        Tải về 500 nến mỗi khung thời gian (mới nhất).
         """
         timeframes = [ENTRY_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME, MACRO_TREND_TIMEFRAME]
         results = {}
@@ -109,7 +109,7 @@ class MarketDataService:
         logger.info("initial_data_load_complete", symbol=symbol, timeframes=list(results.keys()))
         return results
 
-    # ── Candle Access ────────────────────────────────────────────
+    # ── Truy xuất Nến ────────────────────────────────────────────
 
     async def get_candles(
         self,
@@ -119,7 +119,7 @@ class MarketDataService:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
     ) -> list:
-        """Get candles from database."""
+        """Lấy dữ liệu nến từ cơ sở dữ liệu."""
         return list(
             await self._repo.get_candles(
                 symbol=symbol,
@@ -131,20 +131,20 @@ class MarketDataService:
         )
 
     async def get_latest_price(self, symbol: str) -> dict:
-        """Get latest price from Binance REST API."""
+        """Lấy giá mới nhất từ Binance REST API."""
         return await self._client.get_ticker_price(symbol)
 
-    # ── Snapshots ────────────────────────────────────────────────
+    # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────
 
     async def build_and_save_snapshot(self, symbol: str) -> dict:
-        """Build a fresh market snapshot and save it to the database."""
+        """Tạo một ảnh chụp nhanh thị trường mới và lưu vào cơ sở dữ liệu."""
         snapshot_data = await self._snapshot_builder.build_snapshot(symbol)
         snapshot = await self._repo.save_snapshot(snapshot_data)
         await self.db.commit()
         return snapshot_data
 
     async def get_latest_snapshot(self, symbol: str) -> dict | None:
-        """Get the most recent snapshot for a symbol."""
+        """Lấy ảnh chụp nhanh mới nhất cho một cặp giao dịch."""
         snapshot = await self._repo.get_latest_snapshot(symbol)
         if snapshot is None:
             return None
@@ -163,17 +163,17 @@ class MarketDataService:
             "is_stale": snapshot.is_stale,
         }
 
-    # ── Order Book ───────────────────────────────────────────────
+    # ── Sổ lệnh (Order Book) ───────────────────────────────────────────────
 
     async def get_order_book(self, symbol: str, limit: int = 20) -> dict:
-        """Get order book depth from Binance."""
+        """Lấy độ sâu sổ lệnh từ Binance."""
         return await self._client.get_depth(symbol, limit=limit)
 
-    # ── Data Quality ─────────────────────────────────────────────
+    # ── Chất lượng dữ liệu ─────────────────────────────────────────────
 
     async def check_data_quality(self, symbol: str, timeframe: str = ENTRY_TIMEFRAME) -> dict:
-        """Check data quality for a symbol/timeframe combination."""
-        # Get recent candles
+        """Kiểm tra chất lượng dữ liệu cho một cặp giao dịch/khung thời gian."""
+        # Lấy các nến gần đây
         candles = await self._repo.get_candles(symbol, timeframe, limit=200)
         candle_dicts = [
             {
@@ -190,13 +190,13 @@ class MarketDataService:
 
         quality = self._validator.validate_candles(candle_dicts, symbol, timeframe)
 
-        # Add staleness info
+        # Thêm thông tin về độ trễ (staleness)
         latest = await self._repo.get_latest_candle(symbol, timeframe)
         staleness = self._validator.check_staleness(
             latest.open_time if latest else None, symbol
         )
 
-        # Update Prometheus metric
+        # Cập nhật Prometheus metric
         if staleness["staleness_seconds"] is not None:
             MARKET_DATA_STALENESS.labels(symbol=symbol).set(staleness["staleness_seconds"])
 
@@ -207,21 +207,21 @@ class MarketDataService:
             "staleness": staleness,
         }
 
-    # ── Gap Backfill ─────────────────────────────────────────────
+    # ── Bổ sung khoảng trống (Gap Backfill) ─────────────────────────────────────────────
 
     async def backfill_gaps(self, symbol: str, timeframe: str, hours_back: int = 24) -> dict:
-        """Detect and backfill gaps in candle data.
+        """Phát hiện và điền các khoảng trống (gaps) trong dữ liệu nến.
 
-        Fetches missing candles from Binance REST API.
+        Lấy các nến bị thiếu từ Binance REST API.
         """
         end_time = datetime.now(UTC)
         start_time = end_time - timedelta(hours=hours_back)
 
-        # Get existing candles
+        # Lấy các nến hiện có
         candles = await self._repo.get_candles(symbol, timeframe, limit=2000, start_time=start_time)
         candle_dicts = [{"open_time": c.open_time} for c in candles]
 
-        # Find gaps
+        # Tìm khoảng trống
         gaps = self._validator.find_gaps(candle_dicts, timeframe, start_time, end_time)
 
         if not gaps:
@@ -261,16 +261,16 @@ class MarketDataService:
 
         return {"gaps_found": len(gaps), "candles_backfilled": total_backfilled}
 
-    # ── Exchange Info ────────────────────────────────────────────
+    # ── Thông tin sàn (Exchange Info) ────────────────────────────────────────────
 
     async def get_symbol_info(self, symbol: str) -> dict:
-        """Get trading rules for a symbol."""
+        """Lấy quy tắc giao dịch của một cặp tiền."""
         return await self._client.get_exchange_info(symbol)
 
-    # ── Cleanup ──────────────────────────────────────────────────
+    # ── Dọn dẹp (Cleanup) ──────────────────────────────────────────────────
 
     async def cleanup_old_data(self, days: int = 90) -> dict:
-        """Remove candle data older than N days."""
+        """Xóa dữ liệu nến cũ hơn N ngày."""
         cutoff = datetime.now(UTC) - timedelta(days=days)
         results = {}
         for symbol in settings.trading_symbols:

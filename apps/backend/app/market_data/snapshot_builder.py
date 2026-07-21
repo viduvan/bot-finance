@@ -1,7 +1,7 @@
-"""Market snapshot builder.
+"""Trình tạo ảnh chụp nhanh thị trường (Market snapshot builder).
 
-Creates point-in-time snapshots from REST API data, combining
-ticker, order book, and candle data into a unified MarketSnapshot.
+Tạo các ảnh chụp nhanh thị trường tại một thời điểm từ dữ liệu REST API, kết hợp 
+giá ticker, sổ lệnh và dữ liệu nến thành một MarketSnapshot thống nhất.
 """
 
 from __future__ import annotations
@@ -19,17 +19,17 @@ logger = structlog.get_logger(__name__)
 
 
 class SnapshotBuilder:
-    """Builds comprehensive market snapshots from Binance data."""
+    """Tạo các ảnh chụp nhanh thị trường toàn diện từ dữ liệu Binance."""
 
     def __init__(self, client: BinanceRestClient) -> None:
         self._client = client
 
     async def build_snapshot(self, symbol: str) -> dict:
-        """Build a market snapshot by fetching ticker and book data.
+        """Tạo ảnh chụp nhanh thị trường bằng cách lấy dữ liệu ticker và sổ lệnh.
 
-        Returns a dict ready for MarketSnapshot model insertion.
+        Trả về một dict sẵn sàng để insert vào model MarketSnapshot.
         """
-        # Fetch ticker and book data concurrently
+        # Lấy dữ liệu ticker và sổ lệnh đồng thời (concurrently)
         import asyncio
 
         ticker_task = asyncio.create_task(self._client.get_ticker_24h(symbol))
@@ -66,7 +66,7 @@ class SnapshotBuilder:
             "is_stale": False,
         }
 
-        # Validate snapshot data
+        # Kiểm tra tính hợp lệ của dữ liệu snapshot
         if snapshot["last_price"] <= 0:
             snapshot["data_quality"] = "BAD"
             logger.warning("snapshot_invalid_price", symbol=symbol, price=snapshot["last_price"])
@@ -85,7 +85,7 @@ class SnapshotBuilder:
         return snapshot
 
     def is_snapshot_fresh(self, snapshot: dict | Any, max_age: float = MAX_SNAPSHOT_AGE_SECONDS) -> bool:
-        """Check if a snapshot is still fresh enough for analysis."""
+        """Kiểm tra xem ảnh chụp nhanh còn đủ mới để phân tích hay không."""
         timestamp = getattr(snapshot, "timestamp", None) or snapshot.get("timestamp")
         if timestamp is None:
             return False

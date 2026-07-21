@@ -1,6 +1,6 @@
-"""Market data repository — CRUD operations for candles and snapshots.
+"""Repository dữ liệu thị trường — Các thao tác CRUD cho nến và ảnh chụp nhanh (snapshots).
 
-Async SQLAlchemy repository for persisting and querying market data.
+Repository bất đồng bộ sử dụng SQLAlchemy để lưu trữ và truy vấn dữ liệu thị trường.
 """
 
 from __future__ import annotations
@@ -20,18 +20,18 @@ logger = structlog.get_logger(__name__)
 
 
 class MarketDataRepository:
-    """Repository for market candle and snapshot data."""
+    """Repository cho dữ liệu nến và ảnh chụp nhanh thị trường."""
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    # ── Candles ───────────────────────────────────────────────────
+    # ── Nến (Candles) ───────────────────────────────────────────────────
 
     async def upsert_candles(self, symbol: str, timeframe: str, candles: list[dict]) -> int:
-        """Bulk upsert candles (insert or update on conflict).
+        """Cập nhật hoặc chèn (upsert) hàng loạt nến (insert hoặc update khi trùng lặp).
 
-        Uses PostgreSQL ON CONFLICT DO UPDATE for idempotent writes.
-        Returns number of rows affected.
+        Sử dụng PostgreSQL ON CONFLICT DO UPDATE để đảm bảo ghi idempotent.
+        Trả về số lượng hàng bị ảnh hưởng.
         """
         if not candles:
             return 0
@@ -81,7 +81,7 @@ class MarketDataRepository:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
     ) -> Sequence[MarketCandle]:
-        """Fetch candles ordered by open_time descending."""
+        """Lấy danh sách nến sắp xếp theo thời gian mở cửa (open_time) giảm dần."""
         query = (
             select(MarketCandle)
             .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
@@ -98,7 +98,7 @@ class MarketDataRepository:
         return result.scalars().all()
 
     async def get_latest_candle(self, symbol: str, timeframe: str) -> MarketCandle | None:
-        """Get the most recent candle for a symbol/timeframe."""
+        """Lấy cây nến gần nhất cho một cặp giao dịch/khung thời gian."""
         result = await self.db.execute(
             select(MarketCandle)
             .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
@@ -110,7 +110,7 @@ class MarketDataRepository:
     async def count_candles(
         self, symbol: str, timeframe: str, start_time: datetime, end_time: datetime
     ) -> int:
-        """Count candles in a time range."""
+        """Đếm số lượng nến trong một khoảng thời gian."""
         result = await self.db.execute(
             select(func.count())
             .select_from(MarketCandle)
@@ -124,7 +124,7 @@ class MarketDataRepository:
         return result.scalar() or 0
 
     async def delete_old_candles(self, symbol: str, timeframe: str, before: datetime) -> int:
-        """Delete candles older than a threshold."""
+        """Xóa các nến cũ hơn một thời điểm nhất định."""
         result = await self.db.execute(
             delete(MarketCandle).where(
                 MarketCandle.symbol == symbol,
@@ -135,17 +135,17 @@ class MarketDataRepository:
         await self.db.commit()
         return result.rowcount or 0
 
-    # ── Snapshots ────────────────────────────────────────────────
+    # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────
 
     async def save_snapshot(self, snapshot_data: dict) -> MarketSnapshot:
-        """Save a market snapshot."""
+        """Lưu một ảnh chụp nhanh thị trường."""
         snapshot = MarketSnapshot(**snapshot_data)
         self.db.add(snapshot)
         await self.db.flush()
         return snapshot
 
     async def get_latest_snapshot(self, symbol: str) -> MarketSnapshot | None:
-        """Get the most recent snapshot for a symbol."""
+        """Lấy ảnh chụp nhanh mới nhất cho một cặp giao dịch."""
         result = await self.db.execute(
             select(MarketSnapshot)
             .where(MarketSnapshot.symbol == symbol)
@@ -160,7 +160,7 @@ class MarketDataRepository:
         limit: int = 20,
         start_time: datetime | None = None,
     ) -> Sequence[MarketSnapshot]:
-        """Get recent snapshots for a symbol."""
+        """Lấy danh sách các ảnh chụp nhanh gần đây cho một cặp giao dịch."""
         query = (
             select(MarketSnapshot)
             .where(MarketSnapshot.symbol == symbol)

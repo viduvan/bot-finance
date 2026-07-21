@@ -1,4 +1,4 @@
-"""Pydantic schemas for market data API."""
+"""Pydantic schemas cho API dữ liệu thị trường (market data)."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 
-# ── Candle Schemas ───────────────────────────────────────────────
+# ── Lược đồ nến (Candle) ─────────────────────────────────────────
 
 
 class CandleResponse(BaseModel):
-    """Single OHLCV candle."""
+    """Một nến OHLCV duy nhất."""
 
     symbol: str
     timeframe: str
@@ -30,7 +30,7 @@ class CandleResponse(BaseModel):
 
 
 class CandleListResponse(BaseModel):
-    """List of candles with metadata."""
+    """Danh sách nến kèm theo metadata."""
 
     symbol: str
     timeframe: str
@@ -39,7 +39,7 @@ class CandleListResponse(BaseModel):
 
 
 class CandleQueryParams(BaseModel):
-    """Query parameters for candle requests."""
+    """Tham số query cho request lấy dữ liệu nến."""
 
     symbol: str = "BTCUSDT"
     timeframe: str = "15m"
@@ -48,11 +48,11 @@ class CandleQueryParams(BaseModel):
     end_time: datetime | None = None
 
 
-# ── Ticker / Snapshot Schemas ────────────────────────────────────
+# ── Lược đồ Ticker / Snapshot ────────────────────────────────────
 
 
 class TickerResponse(BaseModel):
-    """Real-time ticker price."""
+    """Giá ticker theo thời gian thực."""
 
     symbol: str
     price: Decimal
@@ -68,7 +68,7 @@ class TickerResponse(BaseModel):
 
 
 class MarketSnapshotResponse(BaseModel):
-    """Point-in-time market state for a symbol."""
+    """Trạng thái thị trường tại một thời điểm cho một cặp giao dịch."""
 
     id: str
     symbol: str
@@ -86,18 +86,18 @@ class MarketSnapshotResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── Order Book Schemas ───────────────────────────────────────────
+# ── Lược đồ sổ lệnh (Order Book) ─────────────────────────────────
 
 
 class OrderBookLevel(BaseModel):
-    """Single price level in the order book."""
+    """Một mức giá duy nhất trong sổ lệnh."""
 
     price: Decimal
     quantity: Decimal
 
 
 class OrderBookResponse(BaseModel):
-    """Order book depth snapshot."""
+    """Ảnh chụp nhanh độ sâu của sổ lệnh."""
 
     symbol: str
     timestamp: datetime
@@ -106,11 +106,11 @@ class OrderBookResponse(BaseModel):
     last_update_id: int | None = None
 
 
-# ── WebSocket Message Schemas ────────────────────────────────────
+# ── Lược đồ tin nhắn WebSocket ───────────────────────────────────
 
 
 class WSTickerMessage(BaseModel):
-    """WebSocket ticker update pushed to frontend."""
+    """Cập nhật ticker qua WebSocket đẩy xuống frontend."""
 
     type: str = "ticker"
     symbol: str
@@ -122,7 +122,7 @@ class WSTickerMessage(BaseModel):
 
 
 class WSKlineMessage(BaseModel):
-    """WebSocket kline update pushed to frontend."""
+    """Cập nhật nến (kline) qua WebSocket đẩy xuống frontend."""
 
     type: str = "kline"
     symbol: str
@@ -136,11 +136,11 @@ class WSKlineMessage(BaseModel):
     timestamp: str
 
 
-# ── Exchange Info ────────────────────────────────────────────────
+# ── Thông tin sàn giao dịch (Exchange Info) ──────────────────────
 
 
 class SymbolInfo(BaseModel):
-    """Binance symbol trading rules."""
+    """Quy tắc giao dịch của một cặp tiền trên Binance."""
 
     symbol: str
     status: str
@@ -155,11 +155,11 @@ class SymbolInfo(BaseModel):
     tick_size: Decimal | None = None
 
 
-# ── Data Quality ─────────────────────────────────────────────────
+# ── Chất lượng dữ liệu (Data Quality) ────────────────────────────
 
 
 class DataQualityReport(BaseModel):
-    """Report on data quality for a symbol."""
+    """Báo cáo về chất lượng dữ liệu của một cặp giao dịch."""
 
     symbol: str
     timeframe: str

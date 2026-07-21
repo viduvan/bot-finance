@@ -1,7 +1,7 @@
-"""Data validation service.
+"""Dịch vụ kiểm tra chất lượng dữ liệu (Data validation service).
 
-Detects gaps, stale data, and anomalies in market data.
-Ensures data quality before feeding into the analysis pipeline.
+Phát hiện các khoảng trống (gaps), dữ liệu bị đóng băng/cũ (stale data), và sự bất thường trong dữ liệu thị trường.
+Đảm bảo chất lượng dữ liệu trước khi đưa vào luồng phân tích (analysis pipeline).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from app.core.constants import MAX_DATA_STALENESS_SECONDS
 
 logger = structlog.get_logger(__name__)
 
-# Timeframe → expected interval in seconds
+# Khung thời gian → khoảng thời gian tính bằng giây
 TIMEFRAME_INTERVALS: dict[str, int] = {
     "1m": 60,
     "3m": 180,
@@ -29,16 +29,16 @@ TIMEFRAME_INTERVALS: dict[str, int] = {
     "1d": 86400,
 }
 
-# Maximum allowed price change per candle (as multiplier)
-# e.g. 50% means close can be at most 1.5x or 0.5x of open
+# Thay đổi giá trị tối đa cho phép trong một nến (dưới dạng hệ số nhân)
+# VD: 50% nghĩa là giá đóng cửa có thể cao nhất là 1.5x hoặc thấp nhất là 0.5x so với giá mở cửa
 MAX_CANDLE_PRICE_CHANGE_PCT = Decimal("50.0")
 
-# Maximum allowed volume spike (compared to 20-candle average)
+# Khối lượng đột biến tối đa cho phép (so với trung bình 20 nến gần nhất)
 MAX_VOLUME_SPIKE_MULTIPLIER = 50
 
 
 class DataValidator:
-    """Validates market data for quality issues."""
+    """Kiểm tra dữ liệu thị trường xem có vấn đề về chất lượng không."""
 
     def validate_candles(
         self,
@@ -46,10 +46,10 @@ class DataValidator:
         symbol: str,
         timeframe: str,
     ) -> dict:
-        """Validate a list of candles and return quality report.
+        """Kiểm tra danh sách nến và trả về báo cáo chất lượng.
 
-        Returns:
-            dict with keys: is_healthy, total, gaps, anomalies, warnings
+        Trả về:
+            dict có chứa các keys: is_healthy, total, gaps, anomalies, warnings
         """
         if not candles:
             return {
@@ -57,7 +57,7 @@ class DataValidator:
                 "total": 0,
                 "gaps": [],
                 "anomalies": [],
-                "warnings": ["No candle data"],
+                "warnings": ["Không có dữ liệu nến"],
             }
 
         interval_seconds = TIMEFRAME_INTERVALS.get(timeframe)
@@ -67,17 +67,17 @@ class DataValidator:
                 "total": len(candles),
                 "gaps": [],
                 "anomalies": [],
-                "warnings": [f"Unknown timeframe: {timeframe}"],
+                "warnings": [f"Khung thời gian không xác định: {timeframe}"],
             }
 
-        # Sort by open_time ascending
+        # Sắp xếp theo open_time tăng dần
         sorted_candles = sorted(candles, key=lambda c: c["open_time"])
 
         gaps = []
         anomalies = []
         warnings = []
 
-        # Check for gaps
+        # Kiểm tra khoảng trống (gaps)
         for i in range(1, len(sorted_candles)):
             prev = sorted_candles[i - 1]
             curr = sorted_candles[i]
@@ -85,7 +85,7 @@ class DataValidator:
             prev_time = prev["open_time"]
             curr_time = curr["open_time"]
 
-            # Allow 10% tolerance on interval
+            # Cho phép sai số 10% trên khoảng thời gian
             expected_diff = timedelta(seconds=interval_seconds)
             actual_diff = curr_time - prev_time
 
@@ -97,11 +97,11 @@ class DataValidator:
                     "missing_candles": missing_count,
                 })
 
-        # Check for price anomalies
+        # Kiểm tra các bất thường về giá (price anomalies)
         for c in sorted_candles:
             o, h, l, cl = c["open"], c["high"], c["low"], c["close"]
 
-            # OHLC integrity: high >= max(open, close), low <= min(open, close)
+            # Tính toàn vẹn của OHLC: high >= max(open, close), low <= min(open, close)
             if h < o or h < cl:
                 anomalies.append({
                     "time": c["open_time"].isoformat(),
@@ -116,7 +116,7 @@ class DataValidator:
                     "values": {"open": str(o), "low": str(l), "close": str(cl)},
                 })
 
-            # Extreme price change
+            # Thay đổi giá cực đoan
             if o > 0:
                 change_pct = abs((cl - o) / o * 100)
                 if change_pct > MAX_CANDLE_PRICE_CHANGE_PCT:
@@ -126,11 +126,11 @@ class DataValidator:
                         "change_pct": str(change_pct),
                     })
 
-            # Zero volume (not necessarily an error, but suspicious)
+            # Khối lượng bằng 0 (chưa chắc là lỗi nhưng đáng ngờ)
             if c["volume"] == 0:
-                warnings.append(f"Zero volume at {c['open_time'].isoformat()}")
+                warnings.append(f"Khối lượng bằng 0 tại {c['open_time'].isoformat()}")
 
-        # Volume spike detection
+        # Phát hiện đột biến khối lượng
         if len(sorted_candles) >= 20:
             volumes = [c["volume"] for c in sorted_candles]
             avg_volume = sum(volumes[:20]) / 20
@@ -138,8 +138,8 @@ class DataValidator:
                 for c in sorted_candles[20:]:
                     if c["volume"] > avg_volume * MAX_VOLUME_SPIKE_MULTIPLIER:
                         warnings.append(
-                            f"Volume spike at {c['open_time'].isoformat()}: "
-                            f"{c['volume']} vs avg {avg_volume:.2f}"
+                            f"Đột biến khối lượng tại {c['open_time'].isoformat()}: "
+                            f"{c['volume']} so với trung bình {avg_volume:.2f}"
                         )
 
         is_healthy = len(gaps) == 0 and len(anomalies) == 0
@@ -154,13 +154,13 @@ class DataValidator:
         }
 
     def check_staleness(self, last_update: datetime | None, symbol: str) -> dict:
-        """Check if data is stale."""
+        """Kiểm tra xem dữ liệu có bị cũ/đóng băng không."""
         if last_update is None:
             return {
                 "is_stale": True,
                 "staleness_seconds": None,
                 "symbol": symbol,
-                "message": "No data available",
+                "message": "Không có dữ liệu",
             }
 
         now = datetime.now(UTC)
@@ -180,9 +180,9 @@ class DataValidator:
         expected_start: datetime,
         expected_end: datetime,
     ) -> list[dict]:
-        """Find time gaps that need REST backfill.
+        """Tìm những khoảng thời gian trống cần gọi REST API để điền đầy dữ liệu.
 
-        Returns list of (start_time, end_time) tuples representing gaps.
+        Trả về danh sách chứa các tuple (start_time, end_time) đại diện cho các khoảng trống.
         """
         interval_seconds = TIMEFRAME_INTERVALS.get(timeframe, 900)
         interval = timedelta(seconds=interval_seconds)
@@ -193,12 +193,12 @@ class DataValidator:
         sorted_candles = sorted(candles, key=lambda c: c["open_time"])
         gaps = []
 
-        # Gap at the beginning?
+        # Có khoảng trống ở đầu không?
         first_time = sorted_candles[0]["open_time"]
         if first_time - expected_start > interval * 1.5:
             gaps.append({"start": expected_start, "end": first_time})
 
-        # Gaps between candles
+        # Khoảng trống giữa các nến
         for i in range(1, len(sorted_candles)):
             prev_time = sorted_candles[i - 1]["open_time"]
             curr_time = sorted_candles[i]["open_time"]
@@ -206,7 +206,7 @@ class DataValidator:
             if curr_time - prev_time > interval * 1.5:
                 gaps.append({"start": prev_time + interval, "end": curr_time})
 
-        # Gap at the end?
+        # Có khoảng trống ở cuối không?
         last_time = sorted_candles[-1]["open_time"]
         if expected_end - last_time > interval * 1.5:
             gaps.append({"start": last_time + interval, "end": expected_end})
@@ -214,5 +214,5 @@ class DataValidator:
         return gaps
 
 
-# Singleton instance
+# Instance dùng chung (Singleton)
 data_validator = DataValidator()

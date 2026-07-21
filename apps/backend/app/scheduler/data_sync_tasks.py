@@ -1,10 +1,10 @@
-"""Celery tasks for market data synchronization.
+"""Các tác vụ Celery (Celery tasks) để đồng bộ dữ liệu thị trường.
 
-Scheduled tasks:
-- Periodic candle sync (every 15 min)
-- Market snapshot refresh (every 60 sec)
-- Data gap backfill (every hour)
-- Old data cleanup (daily)
+Các tác vụ được lập lịch:
+- Đồng bộ nến định kỳ (mỗi 15 phút)
+- Làm mới ảnh chụp nhanh thị trường (mỗi 60 giây)
+- Điền dữ liệu bị thiếu/khoảng trống (mỗi giờ)
+- Xóa dữ liệu cũ (hàng ngày)
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ logger = structlog.get_logger(__name__)
 
 
 def _run_async(coro):
-    """Run an async function in a new event loop (for sync Celery workers)."""
+    """Chạy một hàm bất đồng bộ trong một event loop mới (dành cho Celery workers đồng bộ)."""
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(coro)
@@ -30,9 +30,9 @@ def _run_async(coro):
 
 @celery_app.task(bind=True, name="market.sync_candles", max_retries=2, default_retry_delay=30)
 def sync_candles_task(self, symbol: str | None = None, timeframe: str = "15m") -> dict:
-    """Fetch latest candles from Binance and store in database.
+    """Lấy các nến mới nhất từ Binance và lưu vào cơ sở dữ liệu.
 
-    Runs every 15 minutes via Celery Beat.
+    Chạy mỗi 15 phút qua Celery Beat.
     """
     async def _sync():
         from app.database.session import async_session_factory
@@ -62,9 +62,9 @@ def sync_candles_task(self, symbol: str | None = None, timeframe: str = "15m") -
 
 @celery_app.task(bind=True, name="market.refresh_snapshots", max_retries=2, default_retry_delay=10)
 def refresh_snapshots_task(self) -> dict:
-    """Refresh market snapshots for all symbols.
+    """Làm mới ảnh chụp nhanh thị trường cho tất cả các cặp giao dịch.
 
-    Runs every 60 seconds via Celery Beat.
+    Chạy mỗi 60 giây qua Celery Beat.
     """
     async def _refresh():
         from app.database.session import async_session_factory
@@ -95,9 +95,9 @@ def refresh_snapshots_task(self) -> dict:
 
 @celery_app.task(name="market.backfill_gaps")
 def backfill_gaps_task(hours_back: int = 24) -> dict:
-    """Detect and backfill candle data gaps.
+    """Phát hiện và điền các khoảng trống (gaps) dữ liệu nến.
 
-    Runs every hour via Celery Beat.
+    Chạy mỗi giờ qua Celery Beat.
     """
     async def _backfill():
         from app.database.session import async_session_factory
@@ -122,9 +122,9 @@ def backfill_gaps_task(hours_back: int = 24) -> dict:
 
 @celery_app.task(name="market.cleanup_old_data")
 def cleanup_old_data_task(days: int = 90) -> dict:
-    """Remove candle data older than N days.
+    """Xóa dữ liệu nến cũ hơn N ngày.
 
-    Runs daily via Celery Beat.
+    Chạy hàng ngày qua Celery Beat.
     """
     async def _cleanup():
         from app.database.session import async_session_factory
@@ -139,9 +139,9 @@ def cleanup_old_data_task(days: int = 90) -> dict:
 
 @celery_app.task(name="market.initial_load")
 def initial_load_task(symbol: str) -> dict:
-    """Load initial historical data for a symbol.
+    """Tải dữ liệu lịch sử ban đầu cho một cặp giao dịch.
 
-    Called manually or on first startup.
+    Được gọi thủ công hoặc trong lần khởi động đầu tiên.
     """
     async def _load():
         from app.database.session import async_session_factory
