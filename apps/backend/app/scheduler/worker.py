@@ -56,7 +56,7 @@ celery_app.conf.beat_schedule = {
     # Check for expired proposals every minute
     "check-expired-proposals": {
         "task": "app.scheduler.expiration_tasks.check_expired_proposals",
-        "schedule": 60.0,  # Every 60 seconds
+        "schedule": 60.0,
     },
     # Check for expired approval tokens every 15 seconds
     "check-expired-tokens": {
@@ -67,6 +67,40 @@ celery_app.conf.beat_schedule = {
     "system-heartbeat": {
         "task": "app.scheduler.worker.system_heartbeat",
         "schedule": 60.0,
+    },
+    # ── Market Data Tasks ────────────────────────────────────────
+    # Sync candles every 15 minutes
+    "sync-candles-15m": {
+        "task": "market.sync_candles",
+        "schedule": 15 * 60,  # 15 minutes
+        "kwargs": {"timeframe": "15m"},
+    },
+    # Sync 1h candles every hour
+    "sync-candles-1h": {
+        "task": "market.sync_candles",
+        "schedule": 60 * 60,  # 1 hour
+        "kwargs": {"timeframe": "1h"},
+    },
+    # Sync 4h candles every 4 hours
+    "sync-candles-4h": {
+        "task": "market.sync_candles",
+        "schedule": 4 * 60 * 60,  # 4 hours
+        "kwargs": {"timeframe": "4h"},
+    },
+    # Refresh market snapshots every 60 seconds
+    "refresh-snapshots": {
+        "task": "market.refresh_snapshots",
+        "schedule": 60.0,
+    },
+    # Backfill data gaps every hour
+    "backfill-gaps": {
+        "task": "market.backfill_gaps",
+        "schedule": 60 * 60,  # 1 hour
+    },
+    # Clean up old data daily at 03:00 UTC
+    "cleanup-old-data": {
+        "task": "market.cleanup_old_data",
+        "schedule": crontab(hour=3, minute=0),
     },
 }
 

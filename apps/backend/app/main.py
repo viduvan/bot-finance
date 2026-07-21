@@ -23,6 +23,8 @@ from app.core.logging import setup_logging
 from app.core.metrics import SYSTEM_UP
 from app.database.session import close_db, init_db
 from app.services.telegram_service import telegram_service
+from app.market_data.binance_rest import binance_client
+from app.market_data.binance_ws import ws_manager
 
 logger = structlog.get_logger(__name__)
 
@@ -48,11 +50,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         mfa_enabled=settings.mfa_enabled,
     )
 
+    # Start Binance WebSocket streams (non-blocking)
+    try:
+        await ws_manager.start(settings.trading_symbols)
+        logger.info("binance_ws_started", symbols=settings.trading_symbols)
+    except Exception as e:
+        logger.warning("binance_ws_start_failed", error=str(e))
+
     yield
 
     # ── Shutdown ─────────────────────────────────────────────
     logger.info("shutting_down_application")
     SYSTEM_UP.set(0)
+    await ws_manager.stop()
+    await binance_client.close()
     await telegram_service.close()
     await close_db()
     logger.info("application_stopped")
@@ -125,9 +136,13 @@ def create_app() -> FastAPI:
     # Import and register API routers
     from app.api.v1.auth import router as auth_router
     from app.api.v1.system import router as system_router
+    from app.api.v1.market import router as market_router
+    from app.api.websocket.market_ws import router as market_ws_router
 
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
     app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
+    app.include_router(market_router, prefix="/api/v1/market", tags=["market"])
+    app.include_router(market_ws_router, prefix="/api/v1/ws", tags=["websocket"])
 
     return app
 
