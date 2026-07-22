@@ -139,12 +139,14 @@ def create_app() -> FastAPI:
     from app.api.v1.market import router as market_router
     from app.api.websocket.market_ws import router as market_ws_router
     from app.api.v1.features import router as features_router
+    from app.api.v1.analysis import router as analysis_router
 
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
     app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
     app.include_router(market_router, prefix="/api/v1/market", tags=["market"])
     app.include_router(market_ws_router, prefix="/api/v1/ws", tags=["websocket"])
     app.include_router(features_router, prefix="/api/v1", tags=["features"])
+    app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
 
     return app
 
