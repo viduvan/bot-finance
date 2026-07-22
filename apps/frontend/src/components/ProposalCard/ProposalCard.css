@@ -1,0 +1,370 @@
+/* ProposalCard Styles */
+
+.proposal-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.proposal-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.proposal-card:hover::before,
+.proposal-card.approving::before {
+  opacity: 1;
+}
+
+.proposal-card.approving {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2), var(--shadow-md);
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+
+.proposal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.proposal-symbol {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.symbol-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.rec-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rec-badge.buy {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--buy);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.rec-badge.sell {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--sell);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.rec-badge.hold {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--hold);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.proposal-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-muted {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted);
+}
+
+.badge-buy { background: rgba(16, 185, 129, 0.1); color: var(--buy); }
+.badge-sell { background: rgba(239, 68, 68, 0.1); color: var(--sell); }
+
+.proposal-env {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ── Expiry Bar ───────────────────────────────────────────────── */
+
+.expiry-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.expiry-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 999px;
+  transition: width 1s linear, background 0.3s ease;
+}
+
+.expiry-fill.urgent {
+  background: var(--danger);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.expiry-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* ── Price Grid ───────────────────────────────────────────────── */
+
+.proposal-prices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.price-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+
+.price-item.danger { border-color: rgba(239, 68, 68, 0.2); }
+.price-item.success { border-color: rgba(16, 185, 129, 0.2); }
+.price-item.info { border-color: rgba(56, 189, 248, 0.2); }
+
+.price-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.price-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* ── Consensus Panel ─────────────────────────────────────────── */
+
+.consensus-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.consensus-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border);
+}
+
+.consensus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+}
+
+.consensus-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.consensus-item:last-child { border-bottom: none; }
+
+.consensus-key {
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.consensus-val {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.consensus-val.positive { color: var(--success); }
+.consensus-val.negative { color: var(--danger); }
+
+/* ── Stats ───────────────────────────────────────────────────── */
+
+.proposal-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-item {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.stat-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.stat-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.stat-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent-primary);
+}
+
+/* ── Warnings ────────────────────────────────────────────────── */
+
+.warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.warning-item {
+  font-size: 0.75rem;
+  color: var(--warning);
+  background: var(--warning-bg);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--warning);
+}
+
+/* ── Error ───────────────────────────────────────────────────── */
+
+.proposal-error {
+  font-size: 0.8rem;
+  color: var(--danger);
+  background: var(--danger-bg);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--danger);
+}
+
+/* ── Actions ─────────────────────────────────────────────────── */
+
+.proposal-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reconfirm-notice {
+  font-size: 0.75rem;
+  color: var(--warning);
+  width: 100%;
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: #000;
+}
+
+/* ── Confirm Panel ───────────────────────────────────────────── */
+
+.confirm-panel {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.token-timer {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 10px;
+  border-radius: 999px;
+  min-width: 48px;
+  text-align: center;
+}
+
+.token-timer.urgent {
+  color: var(--danger);
+  background: var(--danger-bg);
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+.confirm-price-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.confirm-warning {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}

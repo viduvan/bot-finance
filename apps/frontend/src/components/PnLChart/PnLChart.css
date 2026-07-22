@@ -1,0 +1,122 @@
+/* PnL Chart Styles */
+
+.pnl-chart-empty {
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.pnl-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.pnl-chart-empty p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.pnl-chart-card {
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.pnl-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pnl-chart-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pnl-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.pnl-total.positive { color: var(--success); }
+.pnl-total.negative { color: var(--danger); }
+
+/* ── Win/Loss Bar ────────────────────────────────────────────── */
+
+.win-loss-section {
+  margin-bottom: 20px;
+}
+
+.win-loss-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.win-label { color: var(--success); font-weight: 600; }
+.lose-label { color: var(--danger); font-weight: 600; }
+.win-rate-center { color: var(--text-muted); }
+
+.win-loss-bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  gap: 2px;
+}
+
+.win-bar-fill {
+  background: var(--success);
+  border-radius: 999px 0 0 999px;
+  transition: width 0.8s ease;
+}
+
+.lose-bar-fill {
+  background: var(--danger);
+  border-radius: 0 999px 999px 0;
+  flex: 1;
+  transition: width 0.8s ease;
+}
+
+/* ── Stats Row ───────────────────────────────────────────────── */
+
+.pnl-stats-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.pnl-stat {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.pnl-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.pnl-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.pnl-stat-value.positive { color: var(--success); }
+.pnl-stat-value.negative { color: var(--danger); }

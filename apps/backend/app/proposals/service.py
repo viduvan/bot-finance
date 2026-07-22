@@ -191,6 +191,18 @@ class ProposalService:
         except Exception:
             pass
 
+        # Broadcast real-time event
+        try:
+            from app.api.websocket.connection_manager import event_manager
+            await event_manager.broadcast("proposal_update", {
+                "proposal_id": proposal_id,
+                "symbol": proposal.symbol,
+                "new_status": "APPROVED",
+                "message": "Proposal approved",
+            })
+        except Exception:
+            pass
+
         logger.info("proposal_approved", proposal_id=proposal_id, user_id=user_id)
         return {"status": "APPROVED", "proposal_id": proposal_id}
 
@@ -226,6 +238,18 @@ class ProposalService:
         try:
             PROPOSALS_REJECTED.labels(symbol=proposal.symbol).inc()
             PROPOSALS_ACTIVE.dec()
+        except Exception:
+            pass
+
+        # Broadcast real-time event
+        try:
+            from app.api.websocket.connection_manager import event_manager
+            await event_manager.broadcast("proposal_update", {
+                "proposal_id": proposal_id,
+                "symbol": proposal.symbol,
+                "new_status": "REJECTED",
+                "message": reason or "Proposal rejected",
+            })
         except Exception:
             pass
 

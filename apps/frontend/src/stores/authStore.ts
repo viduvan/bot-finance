@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authApi, type LoginRequest, type LoginResponse, type UserInfo } from '../services/api';
+import { authApi, type LoginRequest, type UserInfo } from '../services/api';
 
 interface AuthState {
   user: UserInfo | null;
@@ -15,7 +15,7 @@ interface AuthState {
   checkAuth: () => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: !!localStorage.getItem('acta_access_token'),
   isLoading: false,
