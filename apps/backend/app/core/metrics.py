@@ -67,6 +67,12 @@ RISK_REJECTIONS = Counter(
     ["event_type"],
 )
 
+RISK_GATE_REJECTIONS = Counter(
+    "acta_risk_gate_rejections_total",
+    "Risk gate rejections by specific condition",
+    ["reason"],
+)
+
 DAILY_DRAWDOWN = Gauge(
     "acta_daily_drawdown_percent",
     "Current daily drawdown percentage",
