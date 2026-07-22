@@ -59,14 +59,49 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    # ── Shutdown ─────────────────────────────────────────────
+    # ── Graceful Shutdown ─────────────────────────────────────
     logger.info("shutting_down_application")
     SYSTEM_UP.set(0)
-    await ws_manager.stop()
-    await binance_client.close()
-    await telegram_service.close()
-    await close_db()
-    logger.info("application_stopped")
+
+    # 1. Stop accepting new WebSocket connections — close all active clients
+    try:
+        from app.api.websocket.connection_manager import event_manager
+        conn_count = event_manager.connection_count
+        if conn_count > 0:
+            logger.info("closing_ws_connections", count=conn_count)
+            await event_manager.broadcast("server_shutdown", {
+                "message": "Server is shutting down. Please reconnect shortly.",
+            })
+    except Exception as e:
+        logger.warning("ws_broadcast_shutdown_failed", error=str(e))
+
+    # 2. Stop Binance WebSocket market data stream
+    try:
+        await ws_manager.stop()
+        logger.info("binance_ws_stopped")
+    except Exception as e:
+        logger.warning("binance_ws_stop_error", error=str(e))
+
+    # 3. Close Binance REST client
+    try:
+        await binance_client.close()
+    except Exception as e:
+        logger.warning("binance_rest_close_error", error=str(e))
+
+    # 4. Close Telegram service
+    try:
+        await telegram_service.close()
+    except Exception as e:
+        logger.warning("telegram_close_error", error=str(e))
+
+    # 5. Close database connections
+    try:
+        await close_db()
+        logger.info("database_disconnected")
+    except Exception as e:
+        logger.warning("db_close_error", error=str(e))
+
+    logger.info("application_stopped", clean=True)
 
 
 def create_app() -> FastAPI:

@@ -1,0 +1,80 @@
+{
+  "__inputs": [{ "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus" }],
+  "uid": "acta-llm-cost",
+  "title": "ACTA — LLM Cost & Performance",
+  "tags": ["acta", "llm", "cost", "agents"],
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total LLM Cost Today (USD)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [{ "expr": "increase(acta_llm_cost_usd_total[24h])", "legendFormat": "Cost $" }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } }
+    },
+    {
+      "id": 2,
+      "title": "Total Tokens Used Today",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [{ "expr": "increase(acta_llm_tokens_total[24h])", "legendFormat": "Tokens" }]
+    },
+    {
+      "id": 3,
+      "title": "Analysis Runs Today",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [{ "expr": "increase(acta_agent_workflow_total[24h])", "legendFormat": "Runs" }]
+    },
+    {
+      "id": 4,
+      "title": "LLM Provider Distribution",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [{ "expr": "increase(acta_llm_calls_total[24h])", "legendFormat": "{{provider}}" }]
+    },
+    {
+      "id": 5,
+      "title": "Cost per Analysis Run Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [{
+        "expr": "rate(acta_llm_cost_usd_total[1h]) * 3600",
+        "legendFormat": "{{provider}} cost/hr"
+      }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 6,
+      "title": "Agent Execution Duration (P95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(acta_agent_duration_seconds_bucket[5m]))",
+        "legendFormat": "{{agent}} P95"
+      }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7,
+      "title": "LLM Fallback Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [{
+        "expr": "rate(acta_llm_fallback_total[5m])",
+        "legendFormat": "{{from_provider}} → {{to_provider}}"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Monthly Cost Projection (USD)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 20 },
+      "targets": [{ "expr": "increase(acta_llm_cost_usd_total[24h]) * 30", "legendFormat": "Monthly est." }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+    }
+  ]
+}

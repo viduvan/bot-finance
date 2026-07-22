@@ -1,0 +1,106 @@
+{
+  "__inputs": [{ "name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus" }],
+  "__requires": [{ "type": "grafana", "id": "grafana", "version": "10.0.0" }],
+  "id": null,
+  "uid": "acta-system-health",
+  "title": "ACTA — System Health",
+  "tags": ["acta", "system", "health"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "System Up",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 0 },
+      "targets": [{ "expr": "acta_system_up", "legendFormat": "Up" }],
+      "options": {
+        "colorMode": "background",
+        "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active WebSocket Connections",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 3, "y": 0 },
+      "targets": [{ "expr": "sum(acta_ws_connected) OR vector(0)", "legendFormat": "WS Clients" }]
+    },
+    {
+      "id": 3,
+      "title": "API Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [{
+        "expr": "rate(http_requests_total[1m])",
+        "legendFormat": "{{method}} {{handler}} {{status_code}}"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Active Proposals",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 4 },
+      "targets": [{ "expr": "acta_proposals_active", "legendFormat": "Active" }]
+    },
+    {
+      "id": 5,
+      "title": "Proposals Created (24h)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 3, "y": 4 },
+      "targets": [{ "expr": "increase(acta_proposals_created_total[24h])", "legendFormat": "Created" }]
+    },
+    {
+      "id": 6,
+      "title": "Binance WS Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 8 },
+      "targets": [{ "expr": "acta_binance_ws_connected", "legendFormat": "Connected" }],
+      "options": {
+        "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] }
+      }
+    },
+    {
+      "id": 7,
+      "title": "API Error Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [{
+        "expr": "rate(http_requests_total{status_code=~\"5..\"}[5m])",
+        "legendFormat": "5xx errors/s"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Response Time P95 (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) * 1000",
+        "legendFormat": "P95 latency"
+      }]
+    },
+    {
+      "id": 9,
+      "title": "Risk Gate Rejections",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 3, "y": 8 },
+      "targets": [{ "expr": "increase(acta_risk_gate_rejections_total[24h])", "legendFormat": "Rejected" }]
+    },
+    {
+      "id": 10,
+      "title": "Daily Loss vs Limit",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "targets": [{ "expr": "acta_daily_loss_percent", "legendFormat": "Daily Loss %" }],
+      "options": {
+        "thresholds": { "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "yellow", "value": 1.5 },
+          { "color": "red", "value": 2.5 }
+        ]}
+      }
+    }
+  ]
+}
