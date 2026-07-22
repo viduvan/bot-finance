@@ -141,6 +141,7 @@ def create_app() -> FastAPI:
     from app.api.v1.features import router as features_router
     from app.api.v1.analysis import router as analysis_router
     from app.api.v1.proposals import router as proposals_router
+    from app.api.v1.execution import router as execution_router
 
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
     app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
@@ -149,6 +150,7 @@ def create_app() -> FastAPI:
     app.include_router(features_router, prefix="/api/v1", tags=["features"])
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
     app.include_router(proposals_router, prefix="/api/v1", tags=["proposals"])
+    app.include_router(execution_router, prefix="/api/v1", tags=["execution"])
 
     return app
 
