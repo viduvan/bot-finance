@@ -148,7 +148,7 @@ services:
 
   # ── Ollama (Local LLM) ────────────────────────────────────
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.12.7
     container_name: acta-ollama
     ports:
       - "11434:11434"
@@ -167,7 +167,7 @@ services:
 
   # ── Prometheus ─────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.13.1
     container_name: acta-prometheus
     ports:
       - "9090:9090"
@@ -183,7 +183,7 @@ services:
 
   # ── Grafana ────────────────────────────────────────────────
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.1.1
     container_name: acta-grafana
     ports:
       - "3001:3000"
