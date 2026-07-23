@@ -6,10 +6,9 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class MarketCandle(Base, TimestampMixin):
@@ -53,4 +52,4 @@ class MarketSnapshot(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     spread_bps: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), nullable=True)
     volume_24h: Mapped[Decimal | None] = mapped_column(Numeric(30, 8), nullable=True)
     is_stale: Mapped[bool] = mapped_column(Boolean, default=False)
-    validation_errors: Mapped[dict] = mapped_column(JSONB, default=list)
+    validation_errors: Mapped[dict] = mapped_column(JSON_TYPE, default=list)

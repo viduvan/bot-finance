@@ -6,10 +6,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Order(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -40,7 +40,7 @@ class Order(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     filled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     canceled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    raw_response: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    raw_response: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
 
     # Relationships
     fills: Mapped[list[OrderFill]] = relationship(back_populates="order", lazy="selectin")

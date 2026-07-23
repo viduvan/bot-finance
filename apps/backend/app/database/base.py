@@ -5,9 +5,13 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import JSON, String, DateTime, func
+from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+# Cross-dialect types (PostgreSQL native in production, String/JSON in SQLite tests)
+JSON_TYPE = JSONB().with_variant(JSON(), "sqlite")
+INET_TYPE = INET().with_variant(String(45), "sqlite")
 
 
 class Base(DeclarativeBase):

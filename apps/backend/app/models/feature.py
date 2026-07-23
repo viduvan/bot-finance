@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, TimestampMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin
 
 
 class TechnicalFeature(Base, TimestampMixin):
@@ -21,5 +21,5 @@ class TechnicalFeature(Base, TimestampMixin):
     symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     timeframe: Mapped[str] = mapped_column(String(10), nullable=False)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    features: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    features: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     version: Mapped[str] = mapped_column(String(20), nullable=False, default="v1")

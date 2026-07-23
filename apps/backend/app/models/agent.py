@@ -6,10 +6,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class AgentWorkflow(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -20,7 +20,7 @@ class AgentWorkflow(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     trigger_type: Mapped[str] = mapped_column(String(30), nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
-    config_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    config_snapshot: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     total_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -74,9 +74,9 @@ class AgentOutput(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     recommendation: Mapped[str | None] = mapped_column(String(20), nullable=True)
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    output_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    output_json: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     validation_status: Mapped[str] = mapped_column(String(20), default="PENDING")
-    validation_errors: Mapped[dict] = mapped_column(JSONB, default=list)
+    validation_errors: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
 
     # Relationships
     agent_run: Mapped[AgentRun] = relationship(back_populates="outputs")

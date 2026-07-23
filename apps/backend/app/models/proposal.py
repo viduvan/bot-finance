@@ -6,10 +6,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class TradeProposal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -31,17 +31,17 @@ class TradeProposal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     suggested_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     suggested_quantity: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     stop_loss_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
-    take_profit_prices: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    take_profit_prices: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
     estimated_risk_amount: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     estimated_profit_amount: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     risk_reward_ratio: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), nullable=True)
     estimated_fee: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     estimated_slippage: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    agent_consensus: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    supporting_reasons: Mapped[dict] = mapped_column(JSONB, default=list)
-    risk_warnings: Mapped[dict] = mapped_column(JSONB, default=list)
-    critic_objections: Mapped[dict] = mapped_column(JSONB, default=list)
+    agent_consensus: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
+    supporting_reasons: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
+    risk_warnings: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
+    critic_objections: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
     market_snapshot_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
@@ -65,10 +65,10 @@ class ProposalVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("trade_proposals.id"), nullable=False, index=True
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
-    changes: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    changes: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     changed_by: Mapped[str | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     change_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    previous_values: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    previous_values: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
 
     # Relationships
     proposal: Mapped[TradeProposal] = relationship(back_populates="versions")

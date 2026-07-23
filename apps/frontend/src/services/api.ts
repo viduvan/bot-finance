@@ -64,7 +64,45 @@ export const systemApi = {
   status: () => api.get('/api/v1/system/status'),
 };
 
-// ── Analysis ─────────────────────────────────────────────────────
+export interface Ticker {
+  symbol: string;
+  price: number;
+  bid: number;
+  ask: number;
+  spread_bps: number;
+  volume_24h: number;
+  price_change_24h: number;
+  price_change_pct_24h: number;
+}
+
+export interface Candle {
+  symbol: string;
+  timeframe: string;
+  open_time: string;
+  close_time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  quote_volume: number;
+  trades_count: number;
+}
+
+export const marketApi = {
+  fetchCandles: (symbol = 'BTCUSDT', timeframe = '15m', limit = 100) =>
+    api.post(`/api/v1/market/candles/fetch?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}`),
+  getCandles: (symbol = 'BTCUSDT', timeframe = '15m', limit = 100) =>
+    api.get<{ symbol: string; timeframe: string; count: number; candles: Candle[] }>(
+      `/api/v1/market/candles?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}`
+    ),
+  ticker: (symbol: string) => api.get<Ticker>(`/api/v1/market/ticker/${symbol}`),
+};
+
+export const featuresApi = {
+  compute: (symbol = 'BTCUSDT', timeframe = '15m') =>
+    api.post(`/api/v1/features/${symbol}/compute?timeframe=${timeframe}`),
+};
 
 export const analysisApi = {
   triggerSync: (symbol: string) => api.post(`/api/v1/analysis/${symbol}/trigger-sync`),

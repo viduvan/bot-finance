@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, INET_TYPE, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class ApprovalToken(Base, UUIDPrimaryKeyMixin):
@@ -60,7 +60,7 @@ class ProposalApproval(Base, UUIDPrimaryKeyMixin):
         UUID(as_uuid=True), ForeignKey("approval_tokens.id"), nullable=True
     )
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    edited_fields: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    edited_fields: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(INET_TYPE, nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

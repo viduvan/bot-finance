@@ -52,14 +52,14 @@ async def test_register_user(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "test@acta.local",
+            "email": "test@acta.io",
             "password": "Test12345678!@",
             "role": "TRADER",
         },
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["email"] == "test@acta.local"
+    assert data["email"] == "test@acta.io"
     assert data["role"] == "TRADER"
     assert data["mfa_enabled"] is False
 
@@ -68,7 +68,7 @@ async def test_register_user(client: AsyncClient) -> None:
 async def test_register_duplicate_email(client: AsyncClient) -> None:
     """Should reject duplicate email registration."""
     user_data = {
-        "email": "dup@acta.local",
+        "email": "dup@acta.io",
         "password": "Test12345678!@",
         "role": "TRADER",
     }
@@ -88,7 +88,7 @@ async def test_login_success(client: AsyncClient) -> None:
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "login@acta.local",
+            "email": "login@acta.io",
             "password": "Test12345678!@",
             "role": "TRADER",
         },
@@ -98,7 +98,7 @@ async def test_login_success(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/auth/login",
         json={
-            "email": "login@acta.local",
+            "email": "login@acta.io",
             "password": "Test12345678!@",
         },
     )
@@ -116,7 +116,7 @@ async def test_login_invalid_password(client: AsyncClient) -> None:
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "badpass@acta.local",
+            "email": "badpass@acta.io",
             "password": "Test12345678!@",
             "role": "TRADER",
         },
@@ -126,7 +126,7 @@ async def test_login_invalid_password(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/auth/login",
         json={
-            "email": "badpass@acta.local",
+            "email": "badpass@acta.io",
             "password": "wrongpassword12",
         },
     )
@@ -139,7 +139,7 @@ async def test_login_nonexistent_user(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/auth/login",
         json={
-            "email": "nobody@acta.local",
+            "email": "nobody@acta.io",
             "password": "Test12345678!@",
         },
     )
@@ -152,7 +152,7 @@ async def test_password_min_length(client: AsyncClient) -> None:
     response = await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "short@acta.local",
+            "email": "short@acta.io",
             "password": "short",
             "role": "TRADER",
         },

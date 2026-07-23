@@ -6,10 +6,10 @@ Audit logs are APPEND-ONLY. No updates or deletes allowed.
 from __future__ import annotations
 
 from sqlalchemy import BigInteger, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, TimestampMixin
+from app.database.base import Base, INET_TYPE, JSON_TYPE, TimestampMixin
 
 
 class AuditLog(Base, TimestampMixin):
@@ -25,8 +25,8 @@ class AuditLog(Base, TimestampMixin):
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     resource_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     resource_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(INET_TYPE, nullable=True)
     request_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     __table_args__ = (
@@ -46,4 +46,4 @@ class SystemEvent(Base, TimestampMixin):
     service: Mapped[str] = mapped_column(String(50), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)

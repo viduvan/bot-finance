@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.config import settings
+from app.config import Environment, settings
 from app.core.constants import APP_DESCRIPTION, APP_NAME, APP_VERSION
 from app.core.logging import setup_logging
 from app.core.metrics import SYSTEM_UP
@@ -112,8 +112,8 @@ def create_app() -> FastAPI:
         version=APP_VERSION,
         lifespan=lifespan,
         default_response_class=ORJSONResponse,
-        docs_url="/api/docs" if settings.debug else None,
-        redoc_url="/api/redoc" if settings.debug else None,
+        docs_url="/api/docs" if (settings.debug or settings.app_env == Environment.DEVELOPMENT) else None,
+        redoc_url="/api/redoc" if (settings.debug or settings.app_env == Environment.DEVELOPMENT) else None,
     )
 
     # ── Middleware ────────────────────────────────────────────

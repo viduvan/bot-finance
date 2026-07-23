@@ -6,10 +6,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class StrategyVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -19,7 +19,7 @@ class StrategyVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     version: Mapped[str] = mapped_column(String(20), nullable=False)
-    config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    config: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -36,9 +36,9 @@ class BacktestRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     timeframe: Mapped[str] = mapped_column(String(10), nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    config: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="RUNNING")
-    results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    results: Mapped[dict | None] = mapped_column(JSON_TYPE, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 

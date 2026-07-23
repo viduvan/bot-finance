@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -38,7 +38,7 @@ class ExchangeAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "exchange_accounts"
 
     user_id: Mapped[str] = mapped_column(
-        String, nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     exchange: Mapped[str] = mapped_column(String(50), nullable=False, default="BINANCE")
     label: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -46,8 +46,8 @@ class ExchangeAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     encrypted_read_api_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
     encrypted_trade_api_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     encrypted_trade_api_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
-    permissions: Mapped[dict] = mapped_column(JSONB, default=list)
-    ip_whitelist: Mapped[dict] = mapped_column(JSONB, default=list)
+    permissions: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
+    ip_whitelist: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relationships
