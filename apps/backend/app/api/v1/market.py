@@ -156,18 +156,36 @@ async def get_order_book(
 # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────────
 
 
-@router.get("/snapshot/{symbol}", response_model=MarketSnapshotResponse | None)
+@router.get("/snapshot/{symbol}")
 async def get_latest_snapshot(
     symbol: str,
     user: CurrentUser,
     db: DBSession,
-) -> MarketSnapshotResponse | dict:
+) -> dict:
     """Lấy ảnh chụp nhanh thị trường gần nhất từ cơ sở dữ liệu."""
     service = _get_market_service(db)
-    snapshot = await service.get_latest_snapshot(symbol)
+    try:
+        snapshot = await service.get_latest_snapshot(symbol)
+    except Exception as e:
+        logger.error("snapshot_fetch_failed", symbol=symbol, error=str(e))
+        return {"message": f"Không thể lấy snapshot: {e}"}
     if not snapshot:
         return {"message": f"Không có ảnh chụp nhanh cho {symbol}. Hãy kích hoạt /snapshot/{symbol}/refresh trước."}
-    return MarketSnapshotResponse(**snapshot)
+    # Trả về an toàn dưới dạng dict (tránh crash khi thiếu field)
+    return {
+        "id": snapshot.get("id", ""),
+        "symbol": snapshot.get("symbol", symbol),
+        "timestamp": str(snapshot.get("timestamp", "")),
+        "source": snapshot.get("source", ""),
+        "last_price": str(snapshot.get("last_price", "0")),
+        "best_bid": str(snapshot.get("best_bid", "0")) if snapshot.get("best_bid") else None,
+        "best_ask": str(snapshot.get("best_ask", "0")) if snapshot.get("best_ask") else None,
+        "bid_qty": str(snapshot.get("bid_qty", "0")) if snapshot.get("bid_qty") else None,
+        "ask_qty": str(snapshot.get("ask_qty", "0")) if snapshot.get("ask_qty") else None,
+        "spread_bps": str(snapshot.get("spread_bps", "0")) if snapshot.get("spread_bps") else None,
+        "volume_24h": str(snapshot.get("volume_24h", "0")) if snapshot.get("volume_24h") else None,
+        "is_stale": snapshot.get("is_stale", False),
+    }
 
 
 @router.post("/snapshot/{symbol}/refresh")

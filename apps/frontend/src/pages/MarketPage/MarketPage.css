@@ -1,4 +1,12 @@
+.error-panel { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); margin: 4px 0; }
+.error-icon { font-size: 1.1rem; flex-shrink: 0; }
+.error-panel p { margin: 0; font-size: 0.8rem; color: #fca5a5; }
+.error-panel strong { display: block; font-size: 0.82rem; color: #fca5a5; margin-bottom: 2px; }
+.error-detail { font-size: 0.75rem; color: rgba(252, 165, 165, 0.7); }
+.error-inline { font-size: 0.9rem; color: #fca5a5; }
+
 .market-ticker-summary { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+
 .mts-left { display: flex; align-items: center; gap: 16px; }
 .mts-symbol { font-size: 1.2rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); margin: 0; }
 .mts-price { font-size: 1.8rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); }

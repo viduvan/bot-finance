@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative /api path to route through Vite dev proxy → avoids CORS errors for POST/DELETE/WebSocket
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -102,8 +104,8 @@ export interface OrderBookData {
 
 export interface SymbolInfo {
   symbol: string; status: string; base_asset: string; quote_asset: string;
-  base_precision: number; quote_precision: number;
-  min_qty: string; max_qty: string; step_size: string;
+  price_precision: number; quantity_precision: number;
+  min_quantity: string; max_quantity: string; step_size: string;
   min_notional: string; tick_size: string;
 }
 
@@ -307,7 +309,7 @@ export const auditApi = {
 
 export function createEventsWebSocket(onMessage: (event: Record<string, unknown>) => void): WebSocket {
   const token = localStorage.getItem('acta_access_token') || '';
-  const wsBase = API_BASE.replace(/^http/, 'ws');
+  const wsBase = `ws://${window.location.host}`;
   const ws = new WebSocket(`${wsBase}/api/v1/ws/events?token=${token}`);
   ws.onmessage = (e) => {
     try { onMessage(JSON.parse(e.data)); } catch { /* ignore */ }
@@ -317,7 +319,7 @@ export function createEventsWebSocket(onMessage: (event: Record<string, unknown>
 
 export function createMarketWebSocket(onMessage: (event: Record<string, unknown>) => void): WebSocket {
   const token = localStorage.getItem('acta_access_token') || '';
-  const wsBase = API_BASE.replace(/^http/, 'ws');
+  const wsBase = `ws://${window.location.host}`;
   const ws = new WebSocket(`${wsBase}/api/v1/ws/market?token=${token}`);
   ws.onmessage = (e) => {
     try { onMessage(JSON.parse(e.data)); } catch { /* ignore */ }
@@ -325,6 +327,7 @@ export function createMarketWebSocket(onMessage: (event: Record<string, unknown>
   return ws;
 }
 
-export const WS_BASE = API_BASE.replace(/^http/, 'ws');
+export const WS_BASE = `ws://${typeof window !== 'undefined' ? window.location.host : 'localhost:5173'}`;
+
 
 export default api;
