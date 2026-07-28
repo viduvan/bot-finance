@@ -1,0 +1,16 @@
+.settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.services-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.service-item { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px solid var(--border); min-width: 160px; }
+.service-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+.service-status { font-size: 0.75rem; font-family: var(--font-mono); margin-left: auto; }
+.svc-ok { color: #22c55e; }
+.svc-warn { color: #eab308; }
+.service-meta { display: flex; gap: 20px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); }
+.service-meta strong { color: var(--text-secondary); }
+
+.config-list { display: flex; flex-direction: column; gap: 4px; }
+.config-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.config-label { font-size: 0.8rem; color: var(--text-muted); text-transform: capitalize; }
+.config-value { font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; text-align: right; max-width: 250px; }
+
+@media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }

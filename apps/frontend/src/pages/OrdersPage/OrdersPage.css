@@ -1,0 +1,8 @@
+.order-row.clickable { cursor: pointer; }
+.order-row.clickable:hover td { background: rgba(255,255,255,0.03); }
+.fills-row td { padding: 0 !important; }
+.fills-detail { padding: 12px 20px 16px; background: rgba(59, 130, 246, 0.04); border-left: 3px solid var(--accent-primary); }
+.fills-detail h5 { margin: 0 0 8px; font-size: 0.8rem; color: var(--text-muted); }
+.fills-list { display: flex; flex-direction: column; gap: 6px; }
+.fill-item { display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-secondary); padding: 6px 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); }
+.fill-item strong { color: var(--text-primary); font-family: var(--font-mono); }
