@@ -7,7 +7,7 @@
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "🛑 Stopping ACTA services..."
+echo " Stopping ACTA services..."
 
 # Kill backend
 pkill -f "uvicorn app.main:app" 2>/dev/null && echo "   ↳ Backend stopped." || echo "   ↳ Backend was not running."
@@ -21,4 +21,4 @@ pkill -f "vite --host" 2>/dev/null && echo "   ↳ Frontend stopped." || echo " 
 # Stop Docker containers
 docker compose stop postgres redis prometheus grafana && echo "   ↳ Docker containers stopped."
 
-echo "✅ All ACTA services stopped successfully!"
+echo " All ACTA services stopped successfully!"
