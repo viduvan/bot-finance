@@ -25,8 +25,8 @@ logger = structlog.get_logger(__name__)
 # Cost per 1M tokens (USD) — approximate
 COST_PER_1M_TOKENS: dict[str, dict[str, float]] = {
     "ollama": {"input": 0.0, "output": 0.0},              # Local — free
-    "gemini": {"input": 0.075, "output": 0.30},           # gemini-2.0-flash
-    "openai": {"input": 0.15, "output": 0.60},            # gpt-4o-mini
+    "gemini": {"input": 0.10, "output": 0.40},             # gemini-3.6-flash
+    "openai": {"input": 0.15, "output": 0.60},             # gpt-4o-mini
 }
 
 
@@ -105,9 +105,7 @@ class OllamaProvider:
 
 
 class GeminiProvider:
-    """Google Gemini API provider."""
-
-    API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    """Google Gemini API provider using official google-genai SDK."""
 
     def __init__(self) -> None:
         self.api_key = settings.gemini_api_key
@@ -118,45 +116,43 @@ class GeminiProvider:
         if not self.api_key:
             raise LLMProviderError("Gemini API key not configured")
 
-        parts = []
-        if system_prompt:
-            parts.append({"text": f"{system_prompt}\n\n{prompt}"})
-        else:
-            parts.append({"text": prompt})
+        try:
+            from google import genai
 
-        url = self.API_URL.format(model=self.model)
-        start = time.monotonic()
+            client = genai.Client(api_key=self.api_key)
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.post(
-                url,
-                params={"key": self.api_key},
-                json={
-                    "contents": [{"parts": parts}],
-                    "generationConfig": {"temperature": settings.llm_temperature},
-                },
+            config = genai.types.GenerateContentConfig(
+                temperature=settings.llm_temperature,
             )
-            resp.raise_for_status()
+            if system_prompt:
+                config.system_instruction = system_prompt
 
-        data = resp.json()
-        latency_ms = (time.monotonic() - start) * 1000
+            start = time.monotonic()
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model=self.model,
+                contents=prompt,
+                config=config,
+            )
+            latency_ms = (time.monotonic() - start) * 1000
 
-        content = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-        )
-        usage = data.get("usageMetadata", {})
+            content = response.text or ""
+            usage = response.usage_metadata
+            input_tokens = usage.prompt_token_count if usage else 0
+            output_tokens = usage.candidates_token_count if usage else 0
 
-        return LLMResponse(
-            content=content,
-            provider="gemini",
-            model=self.model,
-            input_tokens=usage.get("promptTokenCount", 0),
-            output_tokens=usage.get("candidatesTokenCount", 0),
-            latency_ms=latency_ms,
-        )
+            return LLMResponse(
+                content=content,
+                provider="gemini",
+                model=self.model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                latency_ms=latency_ms,
+            )
+        except ImportError:
+            raise LLMProviderError(
+                "google-genai package not installed. Run: pip install google-genai"
+            )
 
 
 class OpenAIProvider:

@@ -81,3 +81,24 @@ async def get_status() -> dict:
             "binance": "unknown",
         },
     }
+
+
+@router.get("/license")
+async def get_license() -> dict:
+    """Return license and API integration info."""
+    gemini_status = "connected" if settings.gemini_api_key else "not_configured"
+
+    return {
+        "app_name": settings.app_name,
+        "version": APP_VERSION,
+        "license": "MIT",
+        "copyright": "Copyright (c) 2026 ChimSe",
+        "gemini_model": settings.gemini_model,
+        "gemini_status": gemini_status,
+        "fallback_chain": settings.llm_fallback_chain,
+        "rate_limits": {
+            "rpm": 60,
+            "tpm": 100_000,
+            "rpd": 100,
+        },
+    }

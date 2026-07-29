@@ -117,7 +117,7 @@ class Settings(BaseSettings):
 
     # Gemini (fallback 1)
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-3.6-flash"
     gemini_timeout: int = 15
 
     # OpenAI (fallback 2)
@@ -126,7 +126,7 @@ class Settings(BaseSettings):
     openai_timeout: int = 15
 
     llm_temperature: float = 0.1
-    llm_fallback_chain: list[str] = Field(default=["ollama", "gemini", "openai"])
+    llm_fallback_chain: list[str] = Field(default=["gemini", "openai", "ollama"])
 
     # ── Binance ──────────────────────────────────────────────────
     binance_read_api_key: str = ""

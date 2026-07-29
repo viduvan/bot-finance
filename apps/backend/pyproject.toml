@@ -63,6 +63,9 @@ dependencies = [
     "orjson>=3.10.0",
     "tenacity>=8.2.0",
     "python-dateutil>=2.9.0",
+
+    # Google Gemini AI
+    "google-genai>=1.0.0",
 ]
 
 [project.optional-dependencies]

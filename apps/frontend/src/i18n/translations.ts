@@ -238,6 +238,29 @@ export const translations = {
   'common.disabled':    { en: '✗ Disabled',          vi: '✗ Tắt' },
   'common.enabled':     { en: '✓ Enabled',           vi: '✓ Bật' },
   'common.lang_switch': { en: '🇻🇳 Tiếng Việt',     vi: '🇬🇧 English' },
+
+  // ── License page ────────────────────────────────────────
+  'nav.license':         { en: 'License',              vi: 'Giấy phép' },
+  'page.license':        { en: 'License & About',      vi: 'Giấy phép & Thông tin' },
+  'lic.version':         { en: 'Version',              vi: 'Phiên bản' },
+  'lic.build':           { en: 'Build',                vi: 'Bản dựng' },
+  'lic.license_title':   { en: 'MIT License',          vi: 'Giấy phép MIT' },
+  'lic.tech_stack':      { en: 'Technology Stack',     vi: 'Công nghệ sử dụng' },
+  'lic.gemini_api':      { en: 'Gemini AI Integration',vi: 'Tích hợp Gemini AI' },
+  'lic.model':           { en: 'Model',                vi: 'Mô hình' },
+  'lic.tier':            { en: 'Tier',                 vi: 'Gói sử dụng' },
+  'lic.fallback_chain':  { en: 'Fallback Chain',       vi: 'Chuỗi dự phòng' },
+  'lic.test_connection': { en: 'Test Connection',      vi: 'Kiểm tra kết nối' },
+  'lic.powered_by':      { en: 'Powered by',           vi: 'Được hỗ trợ bởi' },
+
+  // ── AI Chat ─────────────────────────────────────────────
+  'chat.title':          { en: 'AI Assistant',         vi: 'Trợ lý AI' },
+  'chat.placeholder':    { en: 'Ask about market, positions, analysis...', vi: 'Hỏi về thị trường, vị thế, phân tích...' },
+  'chat.send':           { en: 'Send',                 vi: 'Gửi' },
+  'chat.thinking':       { en: 'Thinking...',          vi: 'Đang suy nghĩ...' },
+  'chat.tool_call':      { en: 'Calling tool',         vi: 'Đang gọi công cụ' },
+  'chat.welcome':        { en: 'Hi! I\'m your AI trading assistant. Ask me about prices, analysis, positions, or market trends.', vi: 'Xin chào! Tôi là trợ lý AI giao dịch. Hỏi tôi về giá, phân tích, vị thế, hoặc xu hướng thị trường.' },
+  'chat.error':          { en: 'Failed to get response. Please try again.', vi: 'Không nhận được phản hồi. Vui lòng thử lại.' },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

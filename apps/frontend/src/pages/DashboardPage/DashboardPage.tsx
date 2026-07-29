@@ -14,9 +14,11 @@ import AnalysisPage from '../AnalysisPage/AnalysisPage';
 import SettingsPage from '../SettingsPage/SettingsPage';
 import OrdersPage from '../OrdersPage/OrdersPage';
 import AuditPage from '../AuditPage/AuditPage';
+import LicensePage from '../LicensePage/LicensePage';
+import AIChatWidget from '../../components/AIChatWidget/AIChatWidget';
 import './DashboardPage.css';
 
-type PageKey = 'dashboard' | 'proposals' | 'positions' | 'market' | 'analysis' | 'orders' | 'audit' | 'settings';
+type PageKey = 'dashboard' | 'proposals' | 'positions' | 'market' | 'analysis' | 'orders' | 'audit' | 'settings' | 'license';
 
 export default function DashboardPage() {
   const { logout } = useAuthStore();
@@ -98,7 +100,7 @@ export default function DashboardPage() {
   const PAGE_TITLE_KEYS: Record<PageKey, string> = {
     dashboard: 'page.dashboard', proposals: 'page.proposals', positions: 'page.positions',
     market: 'page.market', analysis: 'page.analysis', orders: 'page.orders',
-    audit: 'page.audit', settings: 'page.settings',
+    audit: 'page.audit', settings: 'page.settings', license: 'page.license',
   } as const;
 
   return (
@@ -122,6 +124,7 @@ export default function DashboardPage() {
           <div className="sidebar-divider" />
           <NavBtn page="audit"    icon="audit"    active={activePage} onClick={setActivePage} label={t('nav.audit')} />
           <NavBtn page="settings" icon="settings" active={activePage} onClick={setActivePage} label={t('nav.settings')} />
+          <NavBtn page="license"  icon="license"  active={activePage} onClick={setActivePage} label={t('nav.license')} />
         </nav>
 
         <div className="sidebar-footer">
@@ -172,10 +175,12 @@ export default function DashboardPage() {
               {activePage === 'orders'    && <OrdersPage />}
               {activePage === 'audit'     && <AuditPage />}
               {activePage === 'settings'  && <SettingsPage />}
+              {activePage === 'license'   && <LicensePage />}
             </>
           )}
         </div>
       </main>
+      <AIChatWidget />
     </div>
   );
 }
@@ -185,7 +190,7 @@ export default function DashboardPage() {
 function NavBtn({ page, icon, active, onClick, label, badge }: {
   page: PageKey; icon: string; active: PageKey; onClick: (p: PageKey) => void; label: string; badge?: number;
 }) {
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, React.ReactElement> = {
     grid:     <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="11" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="1" y="11" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" /></svg>,
     chart:    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 15V7L6 10L10 4L14 8L17 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>,
     brain:    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" /><path d="M6 9C6 7.5 7.5 6 9 6M12 9C12 10.5 10.5 12 9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
@@ -194,6 +199,7 @@ function NavBtn({ page, icon, active, onClick, label, badge }: {
     order:    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" /><path d="M6 7H12M6 10H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
     audit:    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 2H14V16H4V2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 6H11M7 9H11M7 12H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
     settings: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.5" /><path d="M9 1V3M9 15V17M1 9H3M15 9H17M3.3 3.3L4.7 4.7M13.3 13.3L14.7 14.7M14.7 3.3L13.3 4.7M4.7 13.3L3.3 14.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
+    license:  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1L2 4V8.5C2 12.6 5 16.1 9 17C13 16.1 16 12.6 16 8.5V4L9 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="M6.5 9L8.5 11L12 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   };
 
   return (
@@ -538,7 +544,7 @@ function AnalysisResultCard({ result }: { result: Record<string, unknown> }) {
 
 // ── Proposals View ────────────────────────────────────────────────
 
-function ProposalsView({ proposals, onAction, symbol }: { proposals: Proposal[]; onAction: () => void; symbol: string }) {
+function ProposalsView({ proposals, onAction, symbol: _symbol }: { proposals: Proposal[]; onAction: () => void; symbol: string }) {
   const { t } = useT();
   const [allProposals, setAllProposals] = useState<Proposal[]>([]);
   const [filter, setFilter] = useState<'active' | 'all'>('active');
@@ -568,7 +574,7 @@ function ProposalsView({ proposals, onAction, symbol }: { proposals: Proposal[];
 
 // ── Positions View ────────────────────────────────────────────────
 
-function PositionsView({ pnl, symbol }: { pnl: PnLSummary | null; symbol: string }) {
+function PositionsView({ pnl, symbol: _symbol }: { pnl: PnLSummary | null; symbol: string }) {
   const { t } = useT();
   const [positions, setPositions] = useState<Position[]>([]);
   const [trades, setTrades] = useState<TradeResult[]>([]);

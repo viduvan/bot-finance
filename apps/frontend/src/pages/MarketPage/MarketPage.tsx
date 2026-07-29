@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback, useRef, Component, ReactNode } from 'react';
-import { marketApi, type Ticker, type Candle, type OrderBookData, type SymbolInfo } from '../../services/api';
+import { useEffect, useState, useCallback, useRef, Component } from 'react';
+import type { ReactNode } from 'react';
+import { marketApi, type Ticker, type OrderBookData } from '../../services/api';
 import './MarketPage.css';
 
 interface Props { symbol: string; }
@@ -192,12 +193,12 @@ export default function MarketPage({ symbol }: Props) {
               <InfoRow label="Is Healthy" value={quality.is_healthy ? '✅ Yes' : '⚠️ No'} />
               <InfoRow label="Total Candles" value={String(quality.total || '—')} />
               <InfoRow label="Gap Count" value={String(quality.gap_count ?? '0')} />
-              {quality.staleness && typeof quality.staleness === 'object' && (
+              {(quality.staleness && typeof quality.staleness === 'object' && (
                 <>
                   <InfoRow label="Is Stale" value={(quality.staleness as any).is_stale ? '⚠️ Yes' : '✅ No'} />
                   <InfoRow label="Last Update" value={(quality.staleness as any).last_update ? new Date((quality.staleness as any).last_update).toLocaleString() : '—'} />
                 </>
-              )}
+              )) as React.ReactNode}
             </div>
           ) : (
             <p className="text-muted">No quality data</p>

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { translations, type Lang, type TranslationKey } from './translations';
 
 // ── Context ───────────────────────────────────────────────────────
@@ -63,7 +64,7 @@ export function useT() {
 // ── Language Toggle Button (reusable) ─────────────────────────────
 
 export function LangToggle({ className = '' }: { className?: string }) {
-  const { lang, toggleLang, t } = useT();
+  const { lang, toggleLang } = useT();
   return (
     <button
       onClick={toggleLang}
