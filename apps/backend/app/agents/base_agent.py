@@ -35,7 +35,7 @@ T = TypeVar("T", bound=BaseModel)
 class AgentOutput(BaseModel):
     """Base output model that all agent outputs inherit from."""
 
-    agent_name: str
+    agent_name: str = ""
     provider: str = ""
     model: str = ""
     latency_ms: float = 0

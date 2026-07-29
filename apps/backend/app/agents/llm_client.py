@@ -127,28 +127,46 @@ class GeminiProvider:
             if system_prompt:
                 config.system_instruction = system_prompt
 
-            start = time.monotonic()
-            response = await asyncio.to_thread(
-                client.models.generate_content,
-                model=self.model,
-                contents=prompt,
-                config=config,
-            )
-            latency_ms = (time.monotonic() - start) * 1000
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    start = time.monotonic()
+                    response = await asyncio.to_thread(
+                        client.models.generate_content,
+                        model=self.model,
+                        contents=prompt,
+                        config=config,
+                    )
+                    latency_ms = (time.monotonic() - start) * 1000
 
-            content = response.text or ""
-            usage = response.usage_metadata
-            input_tokens = usage.prompt_token_count if usage else 0
-            output_tokens = usage.candidates_token_count if usage else 0
+                    content = response.text or ""
+                    usage = response.usage_metadata
+                    input_tokens = usage.prompt_token_count if usage else 0
+                    output_tokens = usage.candidates_token_count if usage else 0
 
-            return LLMResponse(
-                content=content,
-                provider="gemini",
-                model=self.model,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                latency_ms=latency_ms,
-            )
+                    return LLMResponse(
+                        content=content,
+                        provider="gemini",
+                        model=self.model,
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        latency_ms=latency_ms,
+                    )
+                except Exception as e:
+                    error_str = str(e)
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                        if attempt < max_retries - 1:
+                            # Exponential backoff: 15s, 30s
+                            delay = 15 * (attempt + 1)
+                            logger.warning(
+                                "gemini_rate_limited",
+                                attempt=attempt + 1,
+                                retry_delay=delay,
+                            )
+                            await asyncio.sleep(delay)
+                            continue
+                    raise LLMProviderError(f"429 RESOURCE_EXHAUSTED. {error_str}")
+
         except ImportError:
             raise LLMProviderError(
                 "google-genai package not installed. Run: pip install google-genai"
