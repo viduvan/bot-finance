@@ -123,7 +123,7 @@ class Settings(BaseSettings):
 
     # Gemini (primary)
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.6-flash"
+    gemini_model: str = "gemini-2.5-flash"
     gemini_timeout: int = 30
 
     # OpenAI (fallback 2)
