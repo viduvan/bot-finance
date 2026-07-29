@@ -67,18 +67,59 @@ async def get_config() -> dict:
 
 @router.get("/status")
 async def get_status() -> dict:
-    """System status including service connectivity."""
-    # Basic status - will be enhanced in later phases with actual connectivity checks
+    """System status including dynamic service connectivity checks."""
+    # Database check
+    db_status = "disconnected"
+    try:
+        from sqlalchemy import text
+        from app.database.session import engine
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception as e:
+        logger.warning("status_db_check_failed", error=str(e))
+
+    # Redis check
+    redis_status = "disconnected"
+    try:
+        import redis.asyncio as redis
+        r = redis.from_url(settings.redis_url)
+        if await r.ping():
+            redis_status = "connected"
+        await r.aclose()
+    except Exception as e:
+        logger.warning("status_redis_check_failed", error=str(e))
+
+    # LLM check
+    llm_status = "connected" if settings.gemini_api_key else "not_configured"
+
+    # Binance check
+    binance_status = "disconnected"
+    try:
+        from app.market_data.binance_rest import binance_client
+        res = await binance_client.get_ticker_price("BTCUSDT")
+        if res and "price" in res:
+            binance_status = "connected"
+    except Exception as e:
+        logger.warning("status_binance_check_failed", error=str(e))
+
+    all_ok = (
+        db_status == "connected"
+        and redis_status == "connected"
+        and llm_status == "connected"
+        and binance_status == "connected"
+    )
+
     return {
-        "status": "operational",
+        "status": "operational" if all_ok else "degraded",
         "version": APP_VERSION,
         "trading_mode": settings.trading_mode.value,
         "timestamp": datetime.now(UTC).isoformat(),
         "services": {
-            "database": "connected",
-            "redis": "connected",
-            "llm": "unknown",
-            "binance": "unknown",
+            "database": db_status,
+            "redis": redis_status,
+            "llm": llm_status,
+            "binance": binance_status,
         },
     }
 

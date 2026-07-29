@@ -12,11 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.approval import ApprovalToken, ProposalApproval
 from app.models.proposal import ProposalVersion, TradeProposal
-from app.proposals.state_machine import ProposalStateMachine
-
 logger = structlog.get_logger(__name__)
-
-_state_machine = ProposalStateMachine()
 
 
 class ProposalRepository:
@@ -96,7 +92,8 @@ class ProposalRepository:
         old_status = proposal.status
 
         # Validate transition
-        _state_machine.transition(old_status, new_status)
+        from app.proposals.state_machine import ProposalStateMachine
+        ProposalStateMachine().transition(old_status, new_status)
 
         previous = {"status": old_status}
         proposal.status = new_status
