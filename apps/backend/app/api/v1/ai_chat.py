@@ -46,17 +46,17 @@ async def tool_get_ticker(symbol: str = "BTCUSDT") -> dict[str, Any]:
     """Fetch real-time ticker data for a symbol."""
     try:
         from app.market_data.binance_rest import binance_client
-        ticker = await binance_client.get_ticker(symbol)
+        ticker = await binance_client.get_ticker_24h(symbol)
         return {
-            "symbol": ticker.get("symbol", symbol),
-            "price": ticker.get("price", "0"),
-            "price_change_24h": ticker.get("priceChange", "0"),
-            "price_change_pct_24h": ticker.get("priceChangePercent", "0"),
-            "volume_24h": ticker.get("quoteVolume", "0"),
-            "high_24h": ticker.get("highPrice", "0"),
-            "low_24h": ticker.get("lowPrice", "0"),
-            "bid": ticker.get("bidPrice", "0"),
-            "ask": ticker.get("askPrice", "0"),
+            "symbol": str(ticker.get("symbol", symbol)),
+            "price": str(ticker.get("price", "0")),
+            "price_change_24h": str(ticker.get("price_change_24h", "0")),
+            "price_change_pct_24h": str(ticker.get("price_change_pct_24h", "0")),
+            "volume_24h": str(ticker.get("quote_volume_24h", "0")),
+            "high_24h": str(ticker.get("high_price", "0")),
+            "low_24h": str(ticker.get("low_price", "0")),
+            "bid": str(ticker.get("bid", "0")),
+            "ask": str(ticker.get("ask", "0")),
         }
     except Exception as e:
         logger.warning("tool_get_ticker_error", error=str(e), symbol=symbol)
@@ -98,7 +98,7 @@ async def tool_get_proposals() -> dict[str, Any]:
 
         async for session in get_session():
             repo = ProposalRepository(session)
-            proposals = await repo.get_active_proposals()
+            proposals = await repo.list_active()
             return {
                 "count": len(proposals),
                 "proposals": [
@@ -106,7 +106,7 @@ async def tool_get_proposals() -> dict[str, Any]:
                         "id": str(p.id),
                         "symbol": p.symbol,
                         "direction": p.direction,
-                        "confidence": str(getattr(p, "confidence", "0")),
+                        "confidence": str(getattr(p, "confidence", getattr(p, "consensus_score", "0"))),
                         "status": p.status,
                         "created_at": str(p.created_at) if p.created_at else "",
                     }

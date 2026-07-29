@@ -30,8 +30,14 @@ class TradingMode(str, Enum):
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    # Resolve project root .env (config.py → app → backend → apps → bot-finance)
+    _project_root = Path(__file__).resolve().parent.parent.parent.parent
+
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(
+            str(_project_root / ".env"),   # project root: /bot-finance/.env
+            ".env",                         # local fallback: apps/backend/.env
+        ),
         env_file_encoding="utf-8",
         case_sensitive=False,
         env_nested_delimiter="__",
@@ -110,15 +116,15 @@ class Settings(BaseSettings):
     agent_max_tool_calls: int = 5
 
     # ── LLM ──────────────────────────────────────────────────────
-    # Ollama (primary - local)
+    # Ollama (local fallback)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:14b"
-    ollama_timeout: int = 30
+    ollama_timeout: int = 60
 
-    # Gemini (fallback 1)
+    # Gemini (primary)
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.6-flash"
-    gemini_timeout: int = 15
+    gemini_timeout: int = 30
 
     # OpenAI (fallback 2)
     openai_api_key: str = ""
@@ -127,6 +133,14 @@ class Settings(BaseSettings):
 
     llm_temperature: float = 0.1
     llm_fallback_chain: list[str] = Field(default=["gemini", "openai", "ollama"])
+
+    @field_validator("llm_fallback_chain", mode="before")
+    @classmethod
+    def parse_fallback_chain(cls, v: Any) -> Any:
+        """Parse comma-separated string into list."""
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v
 
     # ── Binance ──────────────────────────────────────────────────
     binance_read_api_key: str = ""
