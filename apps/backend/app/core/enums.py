@@ -124,7 +124,8 @@ class ProposalStatus(str, Enum):
     DRAFT = "DRAFT"
     ANALYZING = "ANALYZING"
     RISK_REJECTED = "RISK_REJECTED"
-    WAITING_FOR_HUMAN = "WAITING_FOR_HUMAN"
+    PENDING_REVIEW = "PENDING_REVIEW"       # Awaiting human decision (used by service & state_machine)
+    WAITING_FOR_HUMAN = "WAITING_FOR_HUMAN" # Alias — kept for forward-compatibility
     EDITED_BY_HUMAN = "EDITED_BY_HUMAN"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"

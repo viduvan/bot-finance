@@ -62,7 +62,12 @@ export interface SystemConfig {
   app_name: string; version: string; environment: string;
   trading: { mode: string; exchange: string; market: string; symbols: string[]; allowed_order_types: string[]; };
   risk: Record<string, number>;
-  proposal: Record<string, number | boolean>;
+  proposal: {
+    expiration_seconds: number;
+    approval_token_expiration_seconds: number;
+    require_reconfirmation_on_edit: boolean;
+    [key: string]: number | boolean;
+  };
   agents: { enabled: boolean; max_iterations: number; timeout_seconds: number; };
   llm: { fallback_chain: string[]; temperature: number; };
   notifications: { telegram_enabled: boolean; };
@@ -80,23 +85,6 @@ export const systemApi = {
   status: () => api.get<SystemStatus>('/api/v1/system/status'),
   license: () => api.get<any>('/api/v1/system/license'),
   aiStatus: () => api.get<any>('/api/v1/ai/status'),
-};
-
-// ── AI Chat ──────────────────────────────────────────────────────
-
-export interface ChatMessage { role: 'user' | 'assistant' | 'tool'; content: string; tool_name?: string; tool_args?: Record<string, unknown>; }
-export interface ChatResponse {
-  reply: string;
-  tool_calls?: { name: string; args: Record<string, unknown>; result: unknown }[];
-  model: string;
-  provider: string;
-  latency_ms: number;
-}
-
-export const aiApi = {
-  chat: (message: string, history: ChatMessage[] = []) =>
-    api.post<ChatResponse>('/api/v1/ai/chat', { message, history }),
-  status: () => api.get<{ status: string; model: string; provider: string }>('/api/v1/ai/status'),
 };
 
 // ── Market ───────────────────────────────────────────────────────

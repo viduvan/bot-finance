@@ -39,7 +39,7 @@
   background: rgba(255,255,255,0.05); border: 1px solid var(--border);
 }
 .license-badge.mit { color: #10b981; border-color: rgba(16,185,129,0.3); }
-.license-badge.gemini { color: #38bdf8; border-color: rgba(56,189,248,0.3); }
+.license-badge.llm { color: #38bdf8; border-color: rgba(56,189,248,0.3); }
 .license-badge.status-ok { color: #22c55e; border-color: rgba(34,197,94,0.3); }
 .license-badge.status-err { color: #ef4444; border-color: rgba(239,68,68,0.3); }
 
@@ -113,8 +113,8 @@
 .credits-section a { color: var(--accent-primary); }
 .credits-copyright { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
 
-/* Gemini Connection Test */
-.gemini-test-btn {
+/* LLM Connection Test */
+.llm-test-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: var(--radius-sm);
   font-size: 0.75rem; font-weight: 600; cursor: pointer;
@@ -122,11 +122,11 @@
   border: 1px solid rgba(59,130,246,0.2);
   transition: all var(--transition-fast);
 }
-.gemini-test-btn:hover { background: rgba(59,130,246,0.2); }
-.gemini-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.gemini-test-result { margin-top: 10px; font-size: 0.75rem; font-family: var(--font-mono); padding: 8px 12px; border-radius: var(--radius-sm); }
-.gemini-test-result.success { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
-.gemini-test-result.error { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+.llm-test-btn:hover { background: rgba(59,130,246,0.2); }
+.llm-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.llm-test-result { margin-top: 10px; font-size: 0.75rem; font-family: var(--font-mono); padding: 8px 12px; border-radius: var(--radius-sm); }
+.llm-test-result.success { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+.llm-test-result.error { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
 
 @media (max-width: 768px) {
   .license-grid { grid-template-columns: 1fr; }

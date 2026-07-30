@@ -20,7 +20,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.dependencies import get_current_user
-from app.services.gemini_service import gemini_service
+from app.agents.llm_client import llm_client
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -248,48 +248,73 @@ async def chat(
     req: ChatRequest,
     _user: Any = Depends(get_current_user),
 ) -> ChatResponse:
-    """AI Chat with tool-calling capabilities.
+    """ACTA Chat with tool-calling capabilities.
 
     Detects relevant tools from user message, fetches live data,
-    then sends enriched context to Gemini for response generation.
+    then sends enriched context to the active LLM (Ollama-first).
     """
-    if not gemini_service.is_configured:
-        raise HTTPException(
-            status_code=503,
-            detail="Gemini API not configured. Set GEMINI_API_KEY in .env",
-        )
-
     try:
         # Step 1: Detect and call relevant tools
         tool_calls, tools_context = await _detect_and_call_tools(req.message)
 
         logger.info(
-            "ai_chat_tools_called",
+            "acta_chat_tools_called",
             tools=[tc["name"] for tc in tool_calls],
             message_preview=req.message[:80],
         )
 
-        # Step 2: Send enriched prompt to Gemini
-        result = await gemini_service.chat_with_tools(
-            message=req.message,
-            history=req.history if req.history else None,
-            tools_context=tools_context,
+        # Step 2: Build enriched prompt with tool context
+        enriched_prompt = req.message
+        if tools_context:
+            context_lines = [f"User question: {req.message}", "", "--- LIVE DATA CONTEXT ---"]
+            for tool_name, tool_data in tools_context.items():
+                context_lines.append(f"\n[{tool_name}]:")
+                if isinstance(tool_data, dict):
+                    for key, value in tool_data.items():
+                        context_lines.append(f"  {key}: {value}")
+                elif isinstance(tool_data, list):
+                    for item in tool_data[:5]:
+                        context_lines.append(f"  - {item}")
+                else:
+                    context_lines.append(f"  {tool_data}")
+            context_lines.append("\n--- END DATA ---")
+            context_lines.append("\nUse the above live data to answer the user's question accurately.")
+            enriched_prompt = "\n".join(context_lines)
+
+        system_prompt = (
+            "You are ACTA Trading Assistant, an expert crypto trading analyst.\n"
+            "You have access to real-time market data.\n"
+            "Always provide data-driven insights with specific numbers.\n"
+            "Respond concisely and professionally. Use markdown for readability.\n"
+            "If the user speaks Vietnamese, respond in Vietnamese."
+        )
+
+        # Step 3: Send to LLMClient (Ollama-first via fallback chain)
+        result = await llm_client.complete(
+            prompt=enriched_prompt,
+            system_prompt=system_prompt,
         )
 
         return ChatResponse(
-            reply=result["reply"],
+            reply=result.content,
             tool_calls=tool_calls,
-            model=result["model"],
-            provider=result["provider"],
-            latency_ms=result["latency_ms"],
+            model=result.model,
+            provider=result.provider,
+            latency_ms=round(result.latency_ms, 1),
         )
 
     except Exception as e:
-        logger.error("ai_chat_error", error=str(e))
+        logger.error("acta_chat_error", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/status")
 async def ai_status() -> dict[str, Any]:
-    """Check AI service status and configuration."""
-    return gemini_service.get_status()
+    """Check LLM service status and configuration."""
+    primary_provider = settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    return {
+        "status": "connected",
+        "provider": primary_provider,
+        "model": settings.ollama_model if primary_provider == "ollama" else settings.gemini_model,
+        "fallback_chain": settings.llm_fallback_chain_list,
+    }

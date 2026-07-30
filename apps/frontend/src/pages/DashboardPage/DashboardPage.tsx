@@ -15,7 +15,6 @@ import SettingsPage from '../SettingsPage/SettingsPage';
 import OrdersPage from '../OrdersPage/OrdersPage';
 import AuditPage from '../AuditPage/AuditPage';
 import LicensePage from '../LicensePage/LicensePage';
-import AIChatWidget from '../../components/AIChatWidget/AIChatWidget';
 import './DashboardPage.css';
 
 type PageKey = 'dashboard' | 'proposals' | 'positions' | 'market' | 'analysis' | 'orders' | 'audit' | 'settings' | 'license';
@@ -180,7 +179,6 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
-      <AIChatWidget />
     </div>
   );
 }
@@ -218,8 +216,6 @@ function SymbolSelector({ value, onChange }: { value: string; onChange: (v: stri
     <select value={value} onChange={(e) => onChange(e.target.value)} className="symbol-select">
       <option value="BTCUSDT">BTC/USDT</option>
       <option value="ETHUSDT">ETH/USDT</option>
-      <option value="SOLUSDT">SOL/USDT</option>
-      <option value="BNBUSDT">BNB/USDT</option>
     </select>
   );
 }
@@ -343,7 +339,7 @@ function DashboardView({ health, proposals, pnl, pnlPositive, pnlValue, ticker, 
       )}
       {proposals.length === 0 && (
         <div className="empty-state card animate-slide-up">
-          <div className="empty-icon">🤖</div>
+          <div className="empty-icon">📋</div>
           <h3>{t('dash.no_proposals')}</h3>
           <p>{t('dash.analyze')} {selectedSymbol}</p>
         </div>
@@ -462,14 +458,14 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
   const handleRunFull = async () => {
     setLoading('full'); setAnalysisResult(null);
     try {
-      setStatusMsg({ type: 'info', text: `Step 1/3: ${t('dash.analyze')} — ${symbol}...` });
+      setStatusMsg({ type: 'info', text: t('ctrl.step1') });
       await marketApi.fetchCandles(symbol, '15m', 100);
-      setStatusMsg({ type: 'info', text: `Step 2/3: Computing indicators...` });
+      setStatusMsg({ type: 'info', text: t('ctrl.step2') });
       await featuresApi.compute(symbol);
-      setStatusMsg({ type: 'info', text: `Step 3/3: Running AI analysis (30-60s)...` });
+      setStatusMsg({ type: 'info', text: t('ctrl.step3') });
       const { data } = await analysisApi.triggerSync(symbol);
       setAnalysisResult(data);
-      setStatusMsg({ type: 'success', text: `✅ Done! Direction: ${data.final_direction} | Score: ${data.consensus_score}` });
+      setStatusMsg({ type: 'success', text: `✅ ${data.final_direction} | Score: ${data.consensus_score}` });
       onRefresh();
     } catch (e: any) { setStatusMsg({ type: 'error', text: `❌ ${e.response?.data?.detail || e.message}` }); }
     finally { setLoading(null); }
@@ -478,9 +474,9 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
   const handleFetchOnly = async () => {
     setLoading('fetch');
     try {
-      setStatusMsg({ type: 'info', text: `Fetching candles for ${symbol}...` });
+      setStatusMsg({ type: 'info', text: `${t('ctrl.step1').split(':')[0]}: ${symbol}` });
       const { data } = await marketApi.fetchCandles(symbol, '15m', 100);
-      setStatusMsg({ type: 'success', text: `✅ Stored ${data.candles_stored} candles` });
+      setStatusMsg({ type: 'success', text: `✅ ${data.candles_stored} candles` });
       onRefresh();
     } catch (e: any) { setStatusMsg({ type: 'error', text: `❌ ${e.response?.data?.detail || e.message}` }); }
     finally { setLoading(null); }
@@ -490,13 +486,13 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
     <div className="control-panel card animate-fade-in">
       <div className="control-panel-header">
         <div>
-          <h3 className="control-panel-title"><span className="control-icon">⚡</span> AI Multi-Agent Analysis</h3>
-          <p className="control-panel-desc">Fetch data → Compute indicators → Run 5 AI agents → Generate proposals</p>
+          <h3 className="control-panel-title"><span className="control-icon">⚡</span> {t('ctrl.title')}</h3>
+          <p className="control-panel-desc">{t('ctrl.desc')}</p>
         </div>
       </div>
       <div className="control-panel-actions">
         <button onClick={handleFetchOnly} disabled={!!loading} className="btn btn-ghost control-btn">
-          {loading === 'fetch' ? <><span className="spinner-sm" /> {t('common.loading')}</> : <>📥 Fetch Market Data</>}
+          {loading === 'fetch' ? <><span className="spinner-sm" /> {t('common.loading')}</> : t('ctrl.fetch')}
         </button>
         <button onClick={handleRunFull} disabled={!!loading} className="btn btn-primary control-btn-main">
           {loading === 'full' ? <><span className="spinner-sm" /> {t('ana.running')}</> : <>🚀 {t('dash.analyze')}</>}
@@ -509,6 +505,7 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
 }
 
 function AnalysisResultCard({ result }: { result: Record<string, unknown> }) {
+  const { t } = useT();
   const direction = String(result.final_direction || 'HOLD');
   const score = Number(result.consensus_score || 0);
   const proceed = Boolean(result.proceed);
@@ -519,12 +516,12 @@ function AnalysisResultCard({ result }: { result: Record<string, unknown> }) {
       <div className="analysis-result-header">
         <div className="analysis-direction" style={{ color: dirColor }}>{direction === 'BUY' ? '📈' : direction === 'SELL' ? '📉' : '⏸️'} {direction}</div>
         <div className="analysis-meta">
-          <span className={`badge ${proceed ? 'badge-success' : 'badge-warning'}`}>{proceed ? 'Proceed' : 'No Action'}</span>
+          <span className={`badge ${proceed ? 'badge-success' : 'badge-warning'}`}>{proceed ? t('ana.proceed') : t('ana.no_action')}</span>
           <span className="analysis-latency">{Number(result.latency_seconds || 0).toFixed(1)}s</span>
         </div>
       </div>
       <div className="analysis-score-bar">
-        <div className="analysis-score-label">Consensus</div>
+        <div className="analysis-score-label">{t('ana.consensus')}</div>
         <div className="analysis-score-track"><div className="analysis-score-fill" style={{ width: `${Math.abs(score) * 50 + 50}%`, background: dirColor }} /></div>
         <div className="analysis-score-value">{score.toFixed(2)}</div>
       </div>
@@ -564,7 +561,11 @@ function ProposalsView({ proposals, onAction, symbol: _symbol }: { proposals: Pr
         <button onClick={() => setFilter('all')} className={`filter-btn ${filter === 'all' ? 'active' : ''}`}>📋 {t('prop.all')}</button>
       </div>
       {displayProposals.length === 0 ? (
-        <div className="empty-state card"><div className="empty-icon">📋</div><h3>{t('prop.no_proposals')}</h3><p>{t('ana.run_first')}</p></div>
+        <div className="empty-state card">
+          <div className="empty-icon">📋</div>
+          <h3>{t('empty.no_proposals')}</h3>
+          <p>{t('empty.proposals_hint')}</p>
+        </div>
       ) : (
         <div className="proposals-grid">{displayProposals.map(p => <ProposalCard key={p.id} proposal={p} onAction={onAction} expanded />)}</div>
       )}
@@ -610,7 +611,11 @@ function PositionsView({ pnl, symbol: _symbol }: { pnl: PnLSummary | null; symbo
       {tab === 'open' && (
         <div className="card animate-fade-in">
           {positions.filter(p => p.status === 'OPEN').length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📊</div><h3>{t('pos.no_positions')}</h3></div>
+            <div className="empty-state">
+              <div className="empty-icon">📊</div>
+              <h3>{t('empty.no_positions')}</h3>
+              <p>{t('empty.positions_hint')}</p>
+            </div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -636,11 +641,15 @@ function PositionsView({ pnl, symbol: _symbol }: { pnl: PnLSummary | null; symbo
       {tab === 'history' && (
         <div className="card animate-fade-in">
           {trades.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📜</div><h3>{t('pos.no_history')}</h3></div>
+            <div className="empty-state">
+              <div className="empty-icon">📜</div>
+              <h3>{t('empty.no_history')}</h3>
+              <p>{t('empty.history_hint')}</p>
+            </div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
-                <thead><tr><th>{t('pos.symbol')}</th><th>{t('pos.side')}</th><th>{t('pos.entry_price')}</th><th>Exit</th><th>{t('pos.size')}</th><th>{t('pos.pnl')}</th><th>Return</th><th>Duration</th></tr></thead>
+                <thead><tr><th>{t('pos.symbol')}</th><th>{t('pos.side')}</th><th>{t('pos.entry_price')}</th><th>{t('ana.entry')} (out)</th><th>{t('pos.size')}</th><th>{t('pos.pnl')}</th><th>%</th><th>{t('ana.latency')}</th></tr></thead>
                 <tbody>
                   {trades.map(tr => (
                     <tr key={tr.id}>

@@ -112,14 +112,14 @@ class Settings(BaseSettings):
         default=["market_regime", "technical", "order_flow", "risk_analysis", "critic"]
     )
     agent_max_iterations: int = 2
-    agent_timeout_seconds: int = 120
+    agent_timeout_seconds: int = 180
     agent_max_tool_calls: int = 5
 
     # ── LLM ──────────────────────────────────────────────────────
     # Ollama (local fallback)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:14b"
-    ollama_timeout: int = 60
+    ollama_timeout: int = 120
 
     # Gemini (primary)
     gemini_api_key: str = ""
@@ -132,15 +132,19 @@ class Settings(BaseSettings):
     openai_timeout: int = 15
 
     llm_temperature: float = 0.1
-    llm_fallback_chain: list[str] = Field(default=["gemini", "openai", "ollama"])
+    llm_fallback_chain: str = Field(default="ollama")  # stored as str, parsed to list by property
 
-    @field_validator("llm_fallback_chain", mode="before")
-    @classmethod
-    def parse_fallback_chain(cls, v: Any) -> Any:
-        """Parse comma-separated string into list."""
-        if isinstance(v, str):
-            return [x.strip() for x in v.split(",") if x.strip()]
-        return v
+    @property
+    def llm_fallback_chain_list(self) -> list[str]:
+        """Parse comma-separated or JSON array fallback chain into list."""
+        v = self.llm_fallback_chain.strip()
+        if v.startswith("["):
+            import json
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                pass
+        return [x.strip().strip('"').strip("'") for x in v.split(",") if x.strip()]
 
     # ── Binance ──────────────────────────────────────────────────
     binance_read_api_key: str = ""

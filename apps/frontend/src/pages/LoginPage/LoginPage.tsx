@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { useAuthStore } from '../../stores/authStore';
+import { useT } from '../../i18n/I18nContext';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const { login, isLoading, error, mfaRequired, clearError } = useAuthStore();
+  const { t } = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
@@ -47,10 +49,10 @@ export default function LoginPage() {
               <span className="gradient-text">ACTA</span>
             </h1>
           </div>
-          <p className="login-subtitle">Multi-Agent Crypto Trading Advisory</p>
+          <p className="login-subtitle">{t('login.subtitle')}</p>
           <div className="login-badge">
             <span className="status-dot online" />
-            <span>PAPER TRADING</span>
+            <span>{t('login.paper_badge')}</span>
           </div>
         </div>
 
@@ -115,7 +117,7 @@ export default function LoginPage() {
                     <rect x="2" y="6" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
                     <path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="currentColor" strokeWidth="1.2" />
                   </svg>
-                  Authenticator Code
+                  {t('login.mfa_label')}
                 </span>
               </label>
               <input
@@ -141,19 +143,19 @@ export default function LoginPage() {
             {isLoading ? (
               <>
                 <div className="spinner" />
-                Authenticating...
+                {t('login.authenticating')}
               </>
             ) : mfaRequired ? (
-              'Verify & Sign In'
+              t('login.verify')
             ) : (
-              'Sign In'
+              t('login.submit')
             )}
           </button>
         </form>
 
         {/* Footer */}
         <div className="login-footer">
-          <p>Agents analyze. Agents advise. <strong>Humans decide.</strong></p>
+          <p>{t('login.footer').split('. ').slice(0, -1).join('. ')}. <strong>{t('login.footer').split('. ').at(-1)}</strong></p>
         </div>
       </div>
     </div>

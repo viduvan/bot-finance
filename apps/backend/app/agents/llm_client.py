@@ -25,7 +25,7 @@ logger = structlog.get_logger(__name__)
 # Cost per 1M tokens (USD) — approximate
 COST_PER_1M_TOKENS: dict[str, dict[str, float]] = {
     "ollama": {"input": 0.0, "output": 0.0},              # Local — free
-    "gemini": {"input": 0.10, "output": 0.40},             # gemini-3.6-flash
+    "gemini": {"input": 0.10, "output": 0.40},             # gemini-2.5-flash
     "openai": {"input": 0.15, "output": 0.60},             # gpt-4o-mini
 }
 
@@ -234,7 +234,7 @@ class LLMClient:
     }
 
     def __init__(self) -> None:
-        self._fallback_chain = settings.llm_fallback_chain
+        self._fallback_chain = settings.llm_fallback_chain_list
 
     async def complete(
         self,

@@ -30,7 +30,7 @@ const TECH_STACK = [
   { icon: '📘', name: 'TypeScript', desc: 'Type Safety' },
   { icon: '⚡', name: 'Vite', desc: 'Build Tool' },
   { icon: '🐍', name: 'FastAPI', desc: 'Backend API' },
-  { icon: '🤖', name: 'Gemini AI', desc: 'LLM Provider' },
+  { icon: '⚙️', name: 'Ollama', desc: 'Local LLM Engine' },
   { icon: '📊', name: 'Binance', desc: 'Market Data' },
   { icon: '🐘', name: 'PostgreSQL', desc: 'Database' },
   { icon: '🔴', name: 'Redis', desc: 'Cache & Queue' },
@@ -71,7 +71,7 @@ export default function LicensePage() {
     })();
   }, []);
 
-  const handleTestGemini = async () => {
+  const handleTestLLM = async () => {
     setTesting(true);
     setTestResult(null);
     try {
@@ -84,9 +84,10 @@ export default function LicensePage() {
   };
 
   const version = info?.version || config?.version || '0.1.0';
-  const fallbackChain = info?.fallback_chain || config?.llm?.fallback_chain || ['gemini', 'openai', 'ollama'];
-  const geminiModel = info?.gemini_model || 'gemini-3.6-flash';
-  const geminiStatus = info?.gemini_status || 'unknown';
+  const fallbackChain = info?.fallback_chain || config?.llm?.fallback_chain || ['ollama'];
+  const llmModel = info?.gemini_model || config?.llm?.model || 'qwen3:14b';
+  const llmStatus = info?.gemini_status || 'unknown';
+  const primaryProvider = Array.isArray(fallbackChain) ? fallbackChain[0] : 'ollama';
 
   return (
     <div className="page-container license-page stagger">
@@ -105,9 +106,9 @@ export default function LicensePage() {
         </div>
         <div className="license-hero-badges">
           <span className="license-badge mit">📄 MIT License</span>
-          <span className="license-badge gemini"> {geminiModel}</span>
-          <span className={`license-badge ${geminiStatus === 'connected' ? 'status-ok' : 'status-err'}`}>
-            {geminiStatus === 'connected' ? '🟢' : '🔴'} Gemini {geminiStatus}
+          <span className="license-badge llm">{llmModel}</span>
+          <span className={`license-badge ${llmStatus === 'connected' || llmStatus === 'local' ? 'status-ok' : 'status-err'}`}>
+            {llmStatus === 'connected' || llmStatus === 'local' ? '🟢' : '🔴'} {primaryProvider} {llmStatus}
           </span>
         </div>
       </div>
@@ -137,15 +138,15 @@ export default function LicensePage() {
 
         {/* Gemini API Info */}
         <div className="license-text-card animate-fade-in">
-          <h3>🤖 {t('lic.gemini_api')}</h3>
+          <h3>⚙️ {t('lic.gemini_api')}</h3>
           <div className="model-info">
             <div className="model-row">
               <span className="model-label">{t('lic.model')}</span>
-              <span className="model-value">{geminiModel}</span>
+              <span className="model-value">{llmModel}</span>
             </div>
             <div className="model-row">
               <span className="model-label">{t('lic.tier')}</span>
-              <span className="model-value">Free Tier</span>
+              <span className="model-value">{primaryProvider === 'ollama' ? 'Local — No Limits' : 'Cloud API'}</span>
             </div>
             <div className="model-row">
               <span className="model-label">{t('lic.fallback_chain')}</span>
@@ -164,17 +165,17 @@ export default function LicensePage() {
           <div style={{ marginTop: 16 }}>
             <div className="api-status-grid">
               <div className="api-stat">
-                <div className="api-stat-value">{info?.rate_limits?.rpm ?? 60}</div>
+                <div className="api-stat-value">{primaryProvider === 'ollama' ? '∞' : (info?.rate_limits?.rpm ?? 60)}</div>
                 <div className="api-stat-label">RPM</div>
                 <div className="api-stat-sub">Req/Min</div>
               </div>
               <div className="api-stat">
-                <div className="api-stat-value">{info?.rate_limits?.tpm ? `${(info.rate_limits.tpm / 1000).toFixed(0)}K` : '100K'}</div>
+                <div className="api-stat-value">{primaryProvider === 'ollama' ? '∞' : (info?.rate_limits?.tpm ? `${(info.rate_limits.tpm / 1000).toFixed(0)}K` : '100K')}</div>
                 <div className="api-stat-label">TPM</div>
                 <div className="api-stat-sub">Tokens/Min</div>
               </div>
               <div className="api-stat">
-                <div className="api-stat-value">{info?.rate_limits?.rpd ?? 100}</div>
+                <div className="api-stat-value">{primaryProvider === 'ollama' ? '∞' : (info?.rate_limits?.rpd ?? 100)}</div>
                 <div className="api-stat-label">RPD</div>
                 <div className="api-stat-sub">Req/Day</div>
               </div>
@@ -183,11 +184,11 @@ export default function LicensePage() {
 
           {/* Test Connection */}
           <div style={{ marginTop: 16 }}>
-            <button onClick={handleTestGemini} disabled={testing} className="gemini-test-btn">
+            <button onClick={handleTestLLM} disabled={testing} className="llm-test-btn">
               {testing ? <><span className="spinner-sm" /> {t('common.loading')}</> : <>🔌 {t('lic.test_connection')}</>}
             </button>
             {testResult && (
-              <div className={`gemini-test-result ${testResult.status}`}>{testResult.message}</div>
+              <div className={`llm-test-result ${testResult.status}`}>{testResult.message}</div>
             )}
           </div>
         </div>
@@ -198,7 +199,7 @@ export default function LicensePage() {
             <div className="credits-copyright">Copyright © 2026 ChimSe</div>
             <div>ACTA — Human-in-the-Loop Multi-Agent Crypto Trading Advisory System</div>
             <div style={{ marginTop: 8, fontSize: '0.75rem' }}>
-              {t('lic.powered_by')} Google Gemini AI · Binance API · FastAPI · React
+              {t('lic.powered_by')} Ollama (Local LLM) · Binance API · FastAPI · React
             </div>
           </div>
         </div>

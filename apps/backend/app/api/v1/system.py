@@ -51,7 +51,7 @@ async def get_config() -> dict:
             "timeout_seconds": settings.agent_timeout_seconds,
         },
         "llm": {
-            "fallback_chain": settings.llm_fallback_chain,
+            "fallback_chain": settings.llm_fallback_chain_list,
             "temperature": settings.llm_temperature,
         },
         "notifications": {
@@ -90,8 +90,22 @@ async def get_status() -> dict:
     except Exception as e:
         logger.warning("status_redis_check_failed", error=str(e))
 
-    # LLM check
-    llm_status = "connected" if settings.gemini_api_key else "not_configured"
+    # LLM check — ping the primary provider
+    llm_status = "disconnected"
+    primary = settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    try:
+        if primary == "ollama":
+            import httpx
+            async with httpx.AsyncClient(timeout=5.0) as c:
+                resp = await c.get(f"{settings.ollama_base_url}/api/tags")
+                if resp.status_code == 200:
+                    llm_status = "connected"
+        elif primary == "gemini" and settings.gemini_api_key:
+            llm_status = "connected"
+        elif primary == "openai" and settings.openai_api_key:
+            llm_status = "connected"
+    except Exception as e:
+        logger.warning("status_llm_check_failed", provider=primary, error=str(e))
 
     # Binance check
     binance_status = "disconnected"
@@ -126,20 +140,36 @@ async def get_status() -> dict:
 
 @router.get("/license")
 async def get_license() -> dict:
-    """Return license and API integration info."""
-    gemini_status = "connected" if settings.gemini_api_key else "not_configured"
+    """Return license and LLM integration info."""
+    primary_provider = settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    if primary_provider == "ollama":
+        active_model = settings.ollama_model
+        llm_status = "local"
+    elif primary_provider == "gemini":
+        active_model = settings.gemini_model
+        llm_status = "connected" if settings.gemini_api_key else "not_configured"
+    elif primary_provider == "openai":
+        active_model = settings.openai_model
+        llm_status = "connected" if settings.openai_api_key else "not_configured"
+    else:
+        active_model = "unknown"
+        llm_status = "unknown"
 
     return {
         "app_name": settings.app_name,
         "version": APP_VERSION,
         "license": "MIT",
         "copyright": "Copyright (c) 2026 ChimSe",
-        "gemini_model": settings.gemini_model,
-        "gemini_status": gemini_status,
-        "fallback_chain": settings.llm_fallback_chain,
+        "llm_provider": primary_provider,
+        "llm_model": active_model,
+        "llm_status": llm_status,
+        # Keep gemini_* keys for FE backward-compat until Phase 4 FE cleanup
+        "gemini_model": active_model,
+        "gemini_status": llm_status,
+        "fallback_chain": settings.llm_fallback_chain_list,
         "rate_limits": {
-            "rpm": 60,
-            "tpm": 100_000,
-            "rpd": 100,
+            "rpm": 0 if primary_provider == "ollama" else 60,
+            "tpm": 0 if primary_provider == "ollama" else 100_000,
+            "rpd": 0 if primary_provider == "ollama" else 100,
         },
     }

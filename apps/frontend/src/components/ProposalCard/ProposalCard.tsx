@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { proposalsApi, executionApi, type Proposal } from '../../services/api';
+import { useState, useEffect } from 'react';
+import { proposalsApi, executionApi, marketApi, systemApi, type Proposal } from '../../services/api';
+import { useT } from '../../i18n/I18nContext';
 import './ProposalCard.css';
 
 interface Props {
@@ -25,18 +26,37 @@ const REC_COLORS: Record<string, string> = {
 };
 
 export default function ProposalCard({ proposal, onAction, expanded = false }: Props) {
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState(false);
   const [tokenCountdown, setTokenCountdown] = useState<number | null>(null);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [currentPriceInput, setCurrentPriceInput] = useState(proposal.suggested_price || '');
+  const [expirationSeconds, setExpirationSeconds] = useState(600);
+
+  // Load system config to get actual proposal expiration time
+  useEffect(() => {
+    systemApi.config().then(r => {
+      const s = r.data.proposal?.expiration_seconds;
+      if (s && typeof s === 'number' && s > 0) setExpirationSeconds(s);
+    }).catch(() => {/* use default 600s */});
+  }, []);
+
+  // Auto-fill current market price from ticker when proposal is active
+  useEffect(() => {
+    if (!proposal.suggested_price) {
+      marketApi.ticker(proposal.symbol)
+        .then(r => { if (r.data?.price) setCurrentPriceInput(String(r.data.price)); })
+        .catch(() => {/* keep empty */});
+    }
+  }, [proposal.symbol, proposal.suggested_price]);
 
   const statusColor = STATUS_COLORS[proposal.status] || 'muted';
   const recColor = REC_COLORS[proposal.recommendation] || 'hold';
 
   const timeLeft = proposal.seconds_until_expiry;
-  const expiryPercent = Math.max(0, Math.min(100, (timeLeft / 600) * 100));
+  const expiryPercent = Math.max(0, Math.min(100, (timeLeft / expirationSeconds) * 100));
   const expiryUrgent = timeLeft < 120;
 
   async function handleReject() {
@@ -138,27 +158,27 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
         />
       </div>
       <div className="expiry-text">
-        {timeLeft > 0 ? `Expires in ${Math.floor(timeLeft / 60)}m ${timeLeft % 60}s` : 'Expired'}
+        {timeLeft > 0 ? `${t('prop.expires')}: ${Math.floor(timeLeft / 60)}m ${timeLeft % 60}s` : '— Expired —'}
       </div>
 
       {/* Price Grid */}
       <div className="proposal-prices">
         <div className="price-item">
-          <div className="price-label">Entry</div>
+          <div className="price-label">{t('prop.entry')}</div>
           <div className="price-value">{proposal.suggested_price ? `$${parseFloat(proposal.suggested_price).toLocaleString()}` : '—'}</div>
         </div>
         <div className="price-item danger">
-          <div className="price-label">Stop Loss</div>
+          <div className="price-label">{t('prop.stop_loss')}</div>
           <div className="price-value">{proposal.stop_loss_price ? `$${parseFloat(proposal.stop_loss_price).toLocaleString()}` : '—'}</div>
         </div>
         <div className="price-item success">
-          <div className="price-label">Take Profit</div>
+          <div className="price-label">{t('prop.take_profit')}</div>
           <div className="price-value">
             {proposal.take_profit_prices?.tp1 ? `$${parseFloat(proposal.take_profit_prices.tp1).toLocaleString()}` : '—'}
           </div>
         </div>
         <div className="price-item info">
-          <div className="price-label">R/R Ratio</div>
+          <div className="price-label">{t('prop.risk_reward')}</div>
           <div className="price-value">{rr > 0 ? `${rr.toFixed(2)}x` : '—'}</div>
         </div>
       </div>
@@ -183,7 +203,7 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
       {/* Confidence + Score */}
       <div className="proposal-stats">
         <div className="stat-item">
-          <div className="stat-label">Confidence</div>
+          <div className="stat-label">{t('prop.confidence')}</div>
           <div className="stat-bar-wrap">
             <div className="stat-bar">
               <div className="stat-bar-fill" style={{ width: `${confidence}%` }} />
@@ -193,7 +213,7 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
         </div>
         {consensusScore !== undefined && (
           <div className="stat-item">
-            <div className="stat-label">Consensus Score</div>
+            <div className="stat-label">{t('ana.consensus')}</div>
             <div className="stat-score">{(consensusScore as number).toFixed(1)}</div>
           </div>
         )}
@@ -215,10 +235,10 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
       {proposal.status === 'PENDING_REVIEW' && !approving && (
         <div className="proposal-actions">
           <button className="btn btn-success btn-sm" onClick={startApprove} disabled={loading}>
-            {loading ? <span className="spinner" /> : '✅ Approve'}
+            {loading ? <span className="spinner" /> : `✅ ${t('prop.approve')}`}
           </button>
           <button className="btn btn-danger btn-sm" onClick={handleReject} disabled={loading}>
-            {loading ? <span className="spinner" /> : '❌ Reject'}
+            {loading ? <span className="spinner" /> : `❌ ${t('prop.reject')}`}
           </button>
         </div>
       )}
@@ -227,13 +247,13 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
       {approving && pendingToken && (
         <div className="confirm-panel animate-scale-in">
           <div className="confirm-header">
-            <span>🔐 Confirm Approval</span>
+            <span>{t('appr.confirm_title')}</span>
             <span className={`token-timer ${tokenCountdown && tokenCountdown < 10 ? 'urgent' : ''}`}>
               {tokenCountdown}s
             </span>
           </div>
           <div className="confirm-price-input">
-            <label className="input-label">Current Market Price (USDT)</label>
+            <label className="input-label">{t('appr.price_label')}</label>
             <input
               className="input"
               type="text"
@@ -243,15 +263,14 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
             />
           </div>
           <div className="confirm-warning">
-            This will execute a <strong>PAPER</strong> trade immediately.
-            Token expires in <strong>{tokenCountdown}s</strong>.
+            {t('appr.paper_warn')} <strong>{tokenCountdown}s</strong>.
           </div>
           <div className="proposal-actions">
             <button className="btn btn-primary btn-sm" onClick={confirmApprove} disabled={loading}>
-              {loading ? <span className="spinner" /> : '🚀 Confirm Execute'}
+              {loading ? <span className="spinner" /> : t('appr.confirm_exec')}
             </button>
             <button className="btn btn-ghost btn-sm" onClick={cancelApprove} disabled={loading}>
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -259,12 +278,12 @@ export default function ProposalCard({ proposal, onAction, expanded = false }: P
 
       {proposal.status === 'RECONFIRM_REQUIRED' && !approving && (
         <div className="proposal-actions">
-          <div className="reconfirm-notice">⚠️ Price drift detected — re-confirmation required</div>
+          <div className="reconfirm-notice">{t('appr.reconfirm_notice')}</div>
           <button className="btn btn-warning btn-sm" onClick={startApprove} disabled={loading}>
-            🔄 Re-confirm
+            {t('appr.reconfirm_btn')}
           </button>
           <button className="btn btn-danger btn-sm" onClick={handleReject} disabled={loading}>
-            ❌ Reject
+            ❌ {t('prop.reject')}
           </button>
         </div>
       )}

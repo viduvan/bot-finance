@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { systemApi, type SystemConfig, type SystemStatus } from '../../services/api';
+import { useT } from '../../i18n/I18nContext';
 import './SettingsPage.css';
 
 export default function SettingsPage() {
+  const { t } = useT();
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,20 +78,20 @@ export default function SettingsPage() {
 
         {/* Agent Config */}
         <div className="card animate-fade-in">
-          <h4 className="card-title">🤖 Agent Configuration</h4>
+          <h4 className="card-title">⚙️ {t('set.agent')}</h4>
           <div className="config-list">
-            <ConfigRow label="Enabled" value={config?.agents.enabled ? '✅ Yes' : '❌ No'} />
-            <ConfigRow label="Max Iterations" value={String(config?.agents.max_iterations || '—')} />
-            <ConfigRow label="Timeout" value={`${config?.agents.timeout_seconds || '—'}s`} />
+            <ConfigRow label={t('set.enabled')} value={config?.agents.enabled ? t('common.enabled') : t('common.disabled')} />
+            <ConfigRow label={t('set.max_iterations')} value={String(config?.agents.max_iterations || '—')} />
+            <ConfigRow label={t('set.timeout')} value={`${config?.agents.timeout_seconds || '—'}s`} />
           </div>
         </div>
 
         {/* LLM Config */}
         <div className="card animate-fade-in">
-          <h4 className="card-title">🧠 LLM Configuration</h4>
+          <h4 className="card-title">⚙️ {t('set.llm')}</h4>
           <div className="config-list">
-            <ConfigRow label="Fallback Chain" value={config?.llm.fallback_chain?.join(' → ') || '—'} />
-            <ConfigRow label="Temperature" value={String(config?.llm.temperature || '—')} />
+            <ConfigRow label={t('set.fallback_chain')} value={config?.llm.fallback_chain?.join(' → ') || '—'} />
+            <ConfigRow label={t('set.timeout')} value={String(config?.llm.temperature || '—')} />
           </div>
         </div>
 
