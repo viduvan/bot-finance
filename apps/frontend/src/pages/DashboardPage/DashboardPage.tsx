@@ -457,17 +457,30 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
 
   const handleRunFull = async () => {
     setLoading('full'); setAnalysisResult(null);
+    let currentStep = '';
     try {
-      setStatusMsg({ type: 'info', text: t('ctrl.step1') });
+      currentStep = t('ctrl.step1');
+      setStatusMsg({ type: 'info', text: currentStep });
       await marketApi.fetchCandles(symbol, '15m', 100);
-      setStatusMsg({ type: 'info', text: t('ctrl.step2') });
+
+      currentStep = t('ctrl.step2');
+      setStatusMsg({ type: 'info', text: currentStep });
       await featuresApi.compute(symbol);
-      setStatusMsg({ type: 'info', text: t('ctrl.step3') });
+
+      currentStep = t('ctrl.step3');
+      setStatusMsg({ type: 'info', text: currentStep });
       const { data } = await analysisApi.triggerSync(symbol);
       setAnalysisResult(data);
       setStatusMsg({ type: 'success', text: `✅ ${data.final_direction} | Score: ${data.consensus_score}` });
       onRefresh();
-    } catch (e: any) { setStatusMsg({ type: 'error', text: `❌ ${e.response?.data?.detail || e.message}` }); }
+    } catch (e: any) {
+      const errMsg = e.response?.data?.error?.message
+        || e.response?.data?.message
+        || e.response?.data?.detail
+        || e.message
+        || 'Unknown error';
+      setStatusMsg({ type: 'error', text: `❌ [${currentStep}] ${errMsg}` });
+    }
     finally { setLoading(null); }
   };
 
