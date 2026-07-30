@@ -403,4 +403,17 @@ a:hover {
   .page-container {
     padding: 16px;
   }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 560px; }
+  .card { padding: 14px 16px; }
+  input, select, button { font-size: 16px !important; } /* prevent iOS zoom */
+}
+
+@media (max-width: 480px) {
+  html { font-size: 14px; }
+  .page-container { padding: 10px; }
+  .empty-state { padding: 32px 16px; }
+  .badge { font-size: 0.65rem; }
+  .btn { padding: 8px 14px; font-size: 0.8rem; }
+  .btn-sm { padding: 6px 10px; font-size: 0.75rem; }
 }

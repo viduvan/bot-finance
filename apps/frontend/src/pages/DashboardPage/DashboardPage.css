@@ -291,7 +291,56 @@
   border-radius: var(--radius-lg); padding: 18px 20px;
 }
 
-/* ── Page Container ───────────────────────────────────────── */
+/* ── Proposals Toolbar ─────────────────────────────────── */
+
+.proposals-toolbar {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 16px;
+}
+
+.proposals-search-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.search-input-wrap {
+  position: relative; display: flex; align-items: center;
+  flex: 1; min-width: 160px; max-width: 280px;
+}
+.search-icon {
+  position: absolute; left: 10px; color: var(--text-muted); pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 7px 32px 7px 30px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.8rem; outline: none; transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--accent-primary); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-clear {
+  position: absolute; right: 8px; background: none; border: none;
+  color: var(--text-muted); cursor: pointer; font-size: 0.75rem;
+  padding: 2px; line-height: 1;
+}
+.search-clear:hover { color: var(--text-primary); }
+
+.filter-select {
+  padding: 7px 10px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 0.8rem; outline: none;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.filter-select:focus { border-color: var(--accent-primary); }
+
+.filter-clear-btn {
+  padding: 7px 12px; background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2); border-radius: var(--radius-sm);
+  color: #ef4444; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.filter-clear-btn:hover { background: rgba(239,68,68,0.15); }
+
+/* ── Page Container ───────────────────────────────────────────── */
 
 .page-container { }
 
@@ -320,13 +369,52 @@
   .ticker-details { flex-wrap: wrap; }
 }
 
+/* Tablet: sidebar collapses to icon-only strip */
 @media (max-width: 768px) {
   .sidebar { width: 60px; padding: 12px 6px; }
-  .sidebar-brand, .sidebar-link span:not(.nav-badge), .ws-label, .sidebar-logout span { display: none; }
+  .sidebar-brand,
+  .sidebar-link > *:not(svg):not(.nav-badge),
+  .ws-label,
+  .sidebar-logout span,
+  .sidebar-lang-toggle { display: none; }
   .sidebar-link { justify-content: center; padding: 10px; }
   .nav-badge { right: 2px; top: 2px; }
   .dashboard-topbar { padding: 10px 14px; }
   .dashboard-content { padding: 14px; }
   .status-grid { grid-template-columns: 1fr; }
   .pnl-summary-grid { grid-template-columns: 1fr 1fr; }
+  .proposals-search-row { flex-wrap: wrap; }
+  .search-input-wrap { max-width: 100%; }
+}
+
+/* Mobile: sidebar hidden, bottom navigation bar */
+@media (max-width: 480px) {
+  .dashboard { flex-direction: column; }
+
+  .sidebar {
+    width: 100%; height: auto; position: fixed; bottom: 0; top: auto; left: 0; right: 0;
+    flex-direction: row; padding: 8px 4px;
+    border-right: none; border-top: 1px solid var(--border);
+    z-index: 100; overflow-x: auto; overflow-y: hidden;
+  }
+  .sidebar-logo { display: none; }
+  .sidebar-nav { flex-direction: row; flex: 1; justify-content: space-around; gap: 0; overflow: visible; }
+  .sidebar-link {
+    flex-direction: column; gap: 3px; padding: 6px 8px; min-width: 48px;
+    font-size: 0.6rem; align-items: center;
+  }
+  .sidebar-link > *:not(svg):not(.nav-badge) { display: block; font-size: 0.6rem; }
+  .sidebar-footer { display: none; }
+  .sidebar-divider { display: none; }
+
+  .dashboard-main { padding-bottom: 70px; }
+  .dashboard-topbar { flex-wrap: wrap; gap: 8px; }
+  .topbar-time { display: none; }
+  .dashboard-content { padding: 10px; }
+
+  .status-grid { grid-template-columns: 1fr; }
+  .pnl-summary-grid { grid-template-columns: 1fr 1fr; }
+  .proposals-grid { grid-template-columns: 1fr !important; }
+  .control-panel-actions { flex-direction: column; }
+  .filter-select { font-size: 0.75rem; }
 }

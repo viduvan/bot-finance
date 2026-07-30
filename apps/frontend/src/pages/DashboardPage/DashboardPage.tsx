@@ -545,26 +545,79 @@ function ProposalsView({ proposals, onAction, symbol: _symbol }: { proposals: Pr
   const { t } = useT();
   const [allProposals, setAllProposals] = useState<Proposal[]>([]);
   const [filter, setFilter] = useState<'active' | 'all'>('active');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [recFilter, setRecFilter] = useState('ALL');
 
   useEffect(() => {
     if (filter === 'all') {
-      proposalsApi.list({ limit: 50 }).then(r => setAllProposals(r.data.proposals)).catch(() => { });
+      proposalsApi.list({ limit: 100 }).then(r => setAllProposals(r.data.proposals)).catch(() => {});
     }
   }, [filter]);
 
-  const displayProposals = filter === 'active' ? proposals : allProposals;
+  const base = filter === 'active' ? proposals : allProposals;
+
+  const displayProposals = base.filter(p => {
+    const q = search.trim().toLowerCase();
+    const matchSearch = !q || p.symbol.toLowerCase().includes(q) || p.recommendation.toLowerCase().includes(q);
+    const matchStatus = statusFilter === 'ALL' || p.status === statusFilter;
+    const matchRec = recFilter === 'ALL' || p.recommendation === recFilter;
+    return matchSearch && matchStatus && matchRec;
+  });
+
+  const hasFilters = search || statusFilter !== 'ALL' || recFilter !== 'ALL';
 
   return (
     <>
-      <div className="view-filters">
-        <button onClick={() => setFilter('active')} className={`filter-btn ${filter === 'active' ? 'active' : ''}`}>🟢 {t('prop.active')} ({proposals.length})</button>
-        <button onClick={() => setFilter('all')} className={`filter-btn ${filter === 'all' ? 'active' : ''}`}>📋 {t('prop.all')}</button>
+      {/* Toolbar */}
+      <div className="proposals-toolbar">
+        <div className="view-filters">
+          <button onClick={() => setFilter('active')} className={`filter-btn ${filter === 'active' ? 'active' : ''}`}>🟢 {t('prop.active')} ({proposals.length})</button>
+          <button onClick={() => setFilter('all')} className={`filter-btn ${filter === 'all' ? 'active' : ''}`}>📋 {t('prop.all')}</button>
+        </div>
+        <div className="proposals-search-row">
+          <div className="search-input-wrap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="search-icon">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+            <input
+              className="search-input"
+              type="text"
+              placeholder="BTC, ETH, BUY..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+          </div>
+          <select className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="ALL">— {t('ord.status')} —</option>
+            <option value="PENDING_REVIEW">{t('prop.active')}</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="EXECUTED">Executed</option>
+          </select>
+          <select className="filter-select" value={recFilter} onChange={e => setRecFilter(e.target.value)}>
+            <option value="ALL">— Signal —</option>
+            <option value="BUY">📈 BUY</option>
+            <option value="SELL">📉 SELL</option>
+            <option value="HOLD">⏸️ HOLD</option>
+          </select>
+          {hasFilters && (
+            <button className="filter-clear-btn" onClick={() => { setSearch(''); setStatusFilter('ALL'); setRecFilter('ALL'); }}>
+              ✕ {t('common.cancel')}
+            </button>
+          )}
+        </div>
       </div>
+
       {displayProposals.length === 0 ? (
         <div className="empty-state card">
           <div className="empty-icon">📋</div>
-          <h3>{t('empty.no_proposals')}</h3>
-          <p>{t('empty.proposals_hint')}</p>
+          <h3>{hasFilters ? 'Không có kết quả phù hợp' : t('empty.no_proposals')}</h3>
+          <p>{hasFilters ? 'Thử thay đổi bộ lọc.' : t('empty.proposals_hint')}</p>
         </div>
       ) : (
         <div className="proposals-grid">{displayProposals.map(p => <ProposalCard key={p.id} proposal={p} onAction={onAction} expanded />)}</div>
