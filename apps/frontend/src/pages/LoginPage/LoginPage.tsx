@@ -65,7 +65,7 @@ export default function LoginPage() {
                 <path d="M8 5V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 <circle cx="8" cy="11" r="0.75" fill="currentColor" />
               </svg>
-              {error}
+              {error === 'Invalid email or password' || error === 'Invalid credentials' ? t('login.error') : error}
             </div>
           )}
 

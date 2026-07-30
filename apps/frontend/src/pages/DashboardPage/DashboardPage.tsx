@@ -149,7 +149,7 @@ export default function DashboardPage() {
             <NotifBell count={unreadCount} onClick={() => setShowNotifPanel(!showNotifPanel)} />
             <div className="topbar-status">
               <span className={`status-dot ${health?.status === 'healthy' ? 'online' : 'offline'}`} />
-              <span>{health?.trading_mode || '...'}</span>
+              <span>{health?.trading_mode === 'PAPER' ? t('status.paper') : (health?.trading_mode || '...')}</span>
             </div>
             <div className="topbar-time">{currentTime.toLocaleTimeString()}</div>
           </div>
@@ -301,9 +301,9 @@ function DashboardView({ health, proposals, pnl, pnlPositive, pnlValue, ticker, 
           value={`v${health?.version || '...'}`} sub={health?.environment || '...'} />
         <KpiCard
           label={t('dash.trading_mode')}
-          badge={health?.trading_mode || 'PAPER'}
+          badge={health?.trading_mode === 'PAPER' ? t('status.paper') : (health?.trading_mode || 'PAPER')}
           badgeColor="warning"
-          value="PAPER" sub="" />
+          value={health?.trading_mode === 'PAPER' ? t('status.paper') : (health?.trading_mode || 'PAPER')} sub="" />
         <KpiCard
           label={t('dash.active_proposals')}
           badge={String(proposals.length)}
