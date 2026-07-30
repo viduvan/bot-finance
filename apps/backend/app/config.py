@@ -112,14 +112,14 @@ class Settings(BaseSettings):
         default=["market_regime", "technical", "order_flow", "risk_analysis", "critic"]
     )
     agent_max_iterations: int = 2
-    agent_timeout_seconds: int = 180
+    agent_timeout_seconds: int = 300
     agent_max_tool_calls: int = 5
 
     # ── LLM ──────────────────────────────────────────────────────
     # Ollama (local fallback)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:14b"
-    ollama_timeout: int = 120
+    ollama_timeout: int = 300
 
     # Gemini (primary)
     gemini_api_key: str = ""

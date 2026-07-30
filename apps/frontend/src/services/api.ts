@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 300000, // 5 minutes for multi-agent LLM analysis
   headers: { 'Content-Type': 'application/json' },
 });
 

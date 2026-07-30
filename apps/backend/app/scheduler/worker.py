@@ -31,8 +31,8 @@ celery_app.conf.update(
 
     # Task execution
     task_track_started=True,
-    task_time_limit=300,       # Hard kill after 5 minutes
-    task_soft_time_limit=240,  # Soft timeout after 4 minutes
+    task_time_limit=450,       # Hard kill after 7.5 minutes
+    task_soft_time_limit=400,  # Soft timeout after 6.6 minutes
     worker_max_tasks_per_child=100,  # Restart worker after 100 tasks (prevent memory leaks)
     worker_prefetch_multiplier=1,    # Fair scheduling
 
