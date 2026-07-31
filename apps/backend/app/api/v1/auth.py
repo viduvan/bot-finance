@@ -6,12 +6,12 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.config import settings
+from app.core.audit_helper import record_audit
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -94,6 +94,7 @@ async def get_current_user(
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
+    http_request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> LoginResponse:
     """Authenticate user and return JWT tokens.
@@ -106,6 +107,11 @@ async def login(
 
     if not user or not verify_password(request.password, user.password_hash):
         logger.warning("login_failed", email=request.email, reason="invalid_credentials")
+        await record_audit(
+            db, action="USER_LOGIN_FAILED", service="auth",
+            details={"email": request.email, "reason": "invalid_credentials"},
+            request=http_request,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -138,6 +144,12 @@ async def login(
     refresh_token = create_refresh_token(str(user.id))
 
     logger.info("user_logged_in", user_id=str(user.id), email=user.email)
+    await record_audit(
+        db, action="USER_LOGIN", service="auth",
+        user_id=str(user.id),
+        details={"email": user.email, "role": user.role},
+        request=http_request,
+    )
 
     return LoginResponse(
         access_token=access_token,

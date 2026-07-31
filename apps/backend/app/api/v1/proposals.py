@@ -8,6 +8,7 @@ import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from app.core.audit_helper import record_audit
 from app.dependencies import CurrentUser, DBSession
 
 logger = structlog.get_logger(__name__)
@@ -133,6 +134,13 @@ async def approve_proposal(
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
         )
+        await record_audit(
+            db, action="PROPOSAL_APPROVED", service="proposals",
+            user_id=str(user.id),
+            resource_type="proposal", resource_id=proposal_id,
+            details={"current_price": body.current_price},
+            request=request,
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -150,12 +158,20 @@ async def reject_proposal(
     from app.proposals.service import ProposalService
     svc = ProposalService(db)
     try:
-        return await svc.reject(
+        result = await svc.reject(
             proposal_id=proposal_id,
             user_id=str(user.id),
             reason=body.reason,
             ip_address=request.client.host if request.client else None,
         )
+        await record_audit(
+            db, action="PROPOSAL_REJECTED", service="proposals",
+            user_id=str(user.id),
+            resource_type="proposal", resource_id=proposal_id,
+            details={"reason": body.reason},
+            request=request,
+        )
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

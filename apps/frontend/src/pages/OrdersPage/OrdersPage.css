@@ -6,3 +6,51 @@
 .fills-list { display: flex; flex-direction: column; gap: 6px; }
 .fill-item { display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-secondary); padding: 6px 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); }
 .fill-item strong { color: var(--text-primary); font-family: var(--font-mono); }
+
+/* ── Orders Toolbar ─────────────────────────────────────── */
+.orders-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.orders-count {
+  font-size: 0.82rem;
+  margin-left: auto;
+}
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 6px 10px;
+  transition: all 0.18s ease;
+}
+.refresh-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); background: rgba(139,92,246,0.08); }
+
+/* ── Pagination ─────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 0;
+}
+.page-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 6px 16px;
+  transition: all 0.18s ease;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--accent-primary); color: var(--accent-primary); background: rgba(139,92,246,0.1); }
+.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.page-info { font-size: 0.82rem; color: var(--text-muted); min-width: 100px; text-align: center; }
+
