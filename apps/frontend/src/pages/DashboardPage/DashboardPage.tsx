@@ -458,21 +458,65 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
   const handleRunFull = async () => {
     setLoading('full'); setAnalysisResult(null);
     let currentStep = '';
+    const startTime = Date.now();
+
+    const getElapsed = () => `${Math.round((Date.now() - startTime) / 1000)}s`;
+
     try {
+      // Step 1: Fetch market candles
       currentStep = t('ctrl.step1');
       setStatusMsg({ type: 'info', text: currentStep });
       await marketApi.fetchCandles(symbol, '15m', 100);
 
+      // Step 2: Compute features
       currentStep = t('ctrl.step2');
       setStatusMsg({ type: 'info', text: currentStep });
       await featuresApi.compute(symbol);
 
+      // Step 3: Trigger async analysis + poll for result
       currentStep = t('ctrl.step3');
-      setStatusMsg({ type: 'info', text: currentStep });
-      const { data } = await analysisApi.triggerSync(symbol);
-      setAnalysisResult(data);
-      setStatusMsg({ type: 'success', text: `✅ ${data.final_direction} | Score: ${data.consensus_score}` });
-      onRefresh();
+      setStatusMsg({ type: 'info', text: `${currentStep} (đang khởi tạo...)` });
+
+      const { data: triggerData } = await analysisApi.trigger(symbol);
+      const taskId = triggerData.task_id;
+
+      // Poll task status every 5 seconds (max 6 min = 72 polls)
+      let attempts = 0;
+      const maxAttempts = 72;
+
+      const pollTask = async (): Promise<void> => {
+        if (attempts >= maxAttempts) {
+          throw new Error('Phân tích quá thời gian chờ (6 phút). Vui lòng thử lại.');
+        }
+
+        attempts++;
+        setStatusMsg({
+          type: 'info',
+          text: `${currentStep} (${getElapsed()} - đang chờ kết quả...)`,
+        });
+
+        await new Promise(r => setTimeout(r, 5000));
+
+        const { data: statusData } = await analysisApi.taskStatus(taskId);
+
+        if (statusData.status === 'success') {
+          const result = statusData.result;
+          setAnalysisResult(result);
+          setStatusMsg({
+            type: 'success',
+            text: `✅ ${result?.final_direction || 'NO_SIGNAL'} | Score: ${result?.consensus_score ?? 0} | ${getElapsed()}`,
+          });
+          onRefresh();
+        } else if (statusData.status === 'failed') {
+          throw new Error(statusData.error || 'Phân tích thất bại');
+        } else {
+          // still pending/running - poll again
+          return pollTask();
+        }
+      };
+
+      await pollTask();
+
     } catch (e: any) {
       const errMsg = e.response?.data?.error?.message
         || e.response?.data?.message
@@ -480,8 +524,9 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
         || e.message
         || 'Unknown error';
       setStatusMsg({ type: 'error', text: `❌ [${currentStep}] ${errMsg}` });
+    } finally {
+      setLoading(null);
     }
-    finally { setLoading(null); }
   };
 
   const handleFetchOnly = async () => {
@@ -491,9 +536,13 @@ function AnalysisControlPanel({ symbol, onRefresh }: { symbol: string; onRefresh
       const { data } = await marketApi.fetchCandles(symbol, '15m', 100);
       setStatusMsg({ type: 'success', text: `✅ ${data.candles_stored} candles` });
       onRefresh();
-    } catch (e: any) { setStatusMsg({ type: 'error', text: `❌ ${e.response?.data?.detail || e.message}` }); }
+    } catch (e: any) {
+      const errMsg = e.response?.data?.error?.message || e.response?.data?.detail || e.message;
+      setStatusMsg({ type: 'error', text: `❌ ${errMsg}` });
+    }
     finally { setLoading(null); }
   };
+
 
   return (
     <div className="control-panel card animate-fade-in">

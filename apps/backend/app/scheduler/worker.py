@@ -19,6 +19,10 @@ celery_app = Celery(
     "acta",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
+    include=[
+        "app.scheduler.analysis_tasks",
+        "app.scheduler.expiration_tasks",
+    ],
 )
 
 celery_app.conf.update(
@@ -43,11 +47,9 @@ celery_app.conf.update(
     task_default_retry_delay=10,
     task_max_retries=3,
 
-    # Task routes (future use for scaling)
-    task_routes={
-        "app.scheduler.analysis_tasks.*": {"queue": "analysis"},
-        "app.scheduler.expiration_tasks.*": {"queue": "maintenance"},
-    },
+    # Task routes — all tasks use default 'celery' queue for single-worker setup
+    # task_routes kept empty to avoid routing to non-existent queues
+    task_routes={},
 )
 
 # ── Periodic Tasks (Celery Beat) ─────────────────────────────────

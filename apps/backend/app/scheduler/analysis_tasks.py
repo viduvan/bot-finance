@@ -27,11 +27,11 @@ def _run_async(coro):
 
 async def _analyze_symbol(symbol: str) -> dict:
     """Run full analysis pipeline for one symbol and persist results."""
-    from app.database.session import get_db_session
+    from app.database.session import async_session_factory
     from app.agents.orchestrator import AnalysisOrchestrator
     from app.repositories.agent_repo import AgentWorkflowRepository
 
-    async with get_db_session() as db:
+    async with async_session_factory() as db:
         repo = AgentWorkflowRepository(db)
         workflow = await repo.create_workflow(symbol=symbol, trigger_type="SCHEDULED")
 
