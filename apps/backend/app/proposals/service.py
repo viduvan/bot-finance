@@ -61,7 +61,7 @@ class ProposalService:
             proposal=proposal,
             new_status="PENDING_REVIEW",
             change_type="SUBMITTED_FOR_REVIEW",
-            changed_by="system",
+            changed_by=None,  # system-initiated, no user UUID
         )
 
         await self._db.commit()

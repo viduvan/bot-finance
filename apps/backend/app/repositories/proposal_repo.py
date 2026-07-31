@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -12,7 +13,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.approval import ApprovalToken, ProposalApproval
 from app.models.proposal import ProposalVersion, TradeProposal
+
 logger = structlog.get_logger(__name__)
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """Recursively convert non-JSON-serializable types to safe equivalents."""
+    if isinstance(obj, Decimal):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_for_json(i) for i in obj]
+    return obj
+
 
 
 class ProposalRepository:
@@ -195,10 +213,10 @@ class ProposalRepository:
         version = ProposalVersion(
             proposal_id=proposal.id,
             version=proposal.version or 1,
-            changes=changes,
+            changes=_sanitize_for_json(changes),
             changed_by=changed_by,
             change_type=change_type,
-            previous_values=previous_values or {},
+            previous_values=_sanitize_for_json(previous_values or {}),
         )
         self.db.add(version)
         await self.db.flush()
