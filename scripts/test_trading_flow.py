@@ -34,7 +34,7 @@ except ImportError:
 
 BASE_URL = "http://localhost:8000"
 DEFAULT_EMAIL = "admin@acta.io"
-DEFAULT_PASSWORD = "admin123456789"
+DEFAULT_PASSWORD = "Admin@acta2024!"
 
 GREEN="\033[92m"; YELLOW="\033[93m"; RED="\033[91m"
 BLUE="\033[94m"; CYAN="\033[96m"; BOLD="\033[1m"; RESET="\033[0m"
@@ -164,9 +164,10 @@ class TradingFlowTest:
 
     def _strategy(self):
         r = self.client.get(f"/api/v1/strategy/{self.sym}/signal?strategy=ema_pullback")
-        sig, sc, conf = r.get("signal","NO_SIGNAL"), r.get("score",0), r.get("confidence",0)
+        sig, sc, conf = r.get("signal","NO_SIGNAL"), r.get("score",0), r.get("confidence","?")
         c = GREEN if sig == "LONG" else (RED if sig == "SHORT" else YELLOW)
-        print(f"  {c}{BOLD}Signal: {sig}{RESET}  Score: {sc}/100  Confidence: {conf:.0%}")
+        conf_display = f"{conf:.0%}" if isinstance(conf, float) else str(conf)
+        print(f"  {c}{BOLD}Signal: {sig}{RESET}  Score: {sc}/100  Confidence: {conf_display}")
         for reason in r.get("reasons", [])[:5]: info(f"• {reason}")
         return r
 
@@ -236,13 +237,15 @@ class TradingFlowTest:
 
 
 def main():
+    global BASE_URL
     p = argparse.ArgumentParser(description="ACTA E2E Trading Flow Test")
     p.add_argument("--symbol", default="BTCUSDT")
     p.add_argument("--skip-backfill", action="store_true")
     p.add_argument("--skip-analysis", action="store_true")
     p.add_argument("--base-url", default=BASE_URL)
     args = p.parse_args()
-    global BASE_URL; BASE_URL = args.base_url
+    if args.base_url:
+        BASE_URL = args.base_url
     test = TradingFlowTest(args.symbol, args.skip_backfill, args.skip_analysis)
     sys.exit(0 if test.run() else 1)
 

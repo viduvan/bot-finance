@@ -19,7 +19,7 @@ SYMBOL="${1:-BTCUSDT}"
 # ── Step 0: Health Check ──────────────────────────────────────────
 step 0 "Health Check"
 HEALTH=$(curl -s "$BASE/api/v1/system/health" 2>/dev/null)
-if echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('status')=='ok' else 1)" 2>/dev/null; then
+if echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('status') in ('ok','healthy') else 1)" 2>/dev/null; then
   VERSION=$(echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('version','?'))")
   MODE=$(echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('trading_mode','?'))")
   ok "System healthy — v$VERSION mode=$MODE"
@@ -32,7 +32,7 @@ fi
 step 1 "Login"
 LOGIN=$(curl -s -X POST "$BASE/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@acta.io","password":"admin123456789"}' 2>/dev/null)
+  -d '{"email":"admin@acta.io","password":"Admin@acta2024!"}' 2>/dev/null)
 TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
 if [ -z "$TOKEN" ]; then
   fail "Login failed: $LOGIN"
