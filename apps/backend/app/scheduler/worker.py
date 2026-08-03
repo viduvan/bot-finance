@@ -21,6 +21,7 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
     include=[
         "app.scheduler.analysis_tasks",
+        "app.scheduler.data_sync_tasks",
         "app.scheduler.expiration_tasks",
     ],
 )
