@@ -9,6 +9,7 @@ import {
 import { useT, LangToggle } from '../../i18n/I18nContext';
 import ProposalCard from '../../components/ProposalCard/ProposalCard';
 import PnLChart from '../../components/PnLChart/PnLChart';
+import CandlestickChart from '../../components/CandlestickChart/CandlestickChart';
 import MarketPage from '../MarketPage/MarketPage';
 import AnalysisPage from '../AnalysisPage/AnalysisPage';
 import SettingsPage from '../SettingsPage/SettingsPage';
@@ -319,10 +320,20 @@ function DashboardView({ health, proposals, pnl, pnlPositive, pnlValue, ticker, 
           valueClass={pnlPositive ? 'pnl-positive' : 'pnl-negative'} />
       </div>
       <div className="section-header">
-        <h3 className="section-title">📈 {selectedSymbol} {t('dash.price_chart')} (15m)</h3>
-        <span className="section-badge-muted">{candles.length} candles</span>
+        <h3 className="section-title">📈 {selectedSymbol} {t('dash.price_chart')}</h3>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <span className="section-badge-muted">Interactive Chart</span>
+        </div>
       </div>
-      <MiniCandleChart candles={candles} />
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <CandlestickChart
+          symbol={selectedSymbol}
+          height={380}
+          showVolume
+          showEma
+          autoRefreshMs={30000}
+        />
+      </div>
       <AnalysisControlPanel symbol={selectedSymbol} onRefresh={() => { onProposalAction(); onMarketRefresh(); }} />
       <div className="section-header"><h3 className="section-title">Performance</h3></div>
       <PnLChart pnl={pnl} />

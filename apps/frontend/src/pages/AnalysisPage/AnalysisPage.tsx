@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { analysisApi, featuresApi, strategyApi, type AnalysisWorkflow, type StrategySignal } from '../../services/api';
+import DataCoverage from '../../components/DataCoverage/DataCoverage';
 import './AnalysisPage.css';
 
 interface Props { symbol: string; }
@@ -34,6 +35,26 @@ export default function AnalysisPage({ symbol }: Props) {
 
   return (
     <div className="page-container stagger">
+      {/* Data Sufficiency Banner */}
+      {features && (features as Record<string, unknown>).data_sufficient === false && (
+        <div className="card animate-fade-in" style={{
+          background: 'rgba(234,179,8,0.08)',
+          border: '1px solid rgba(234,179,8,0.25)',
+          padding: '10px 16px',
+        }}>
+          <strong style={{ color: '#facc15' }}>⚠ Insufficient candle data</strong>
+          <span style={{ color: 'rgba(200,200,210,0.7)', fontSize: '0.82rem', marginLeft: 8 }}>
+            {String((features as Record<string, unknown>).data_warning || '')}
+            {' '}<strong>Run Deep Backfill on Market page to improve accuracy.</strong>
+          </span>
+        </div>
+      )}
+      {features && (features as Record<string, unknown>).data_sufficient === true && (
+        <div style={{ fontSize: '0.76rem', color: '#4ade80', padding: '4px 0 4px 4px' }}>
+          ✅ {(features as Record<string, unknown>).candle_count_15m as number} candles — sufficient for all indicators
+        </div>
+      )}
+
       <div className="analysis-tabs">
         {(['history', 'indicators', 'strategy'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`filter-btn ${tab === t ? 'active' : ''}`}>
@@ -52,6 +73,9 @@ export default function AnalysisPage({ symbol }: Props) {
           onStrategyChange={(s) => { setSelectedStrategy(s); }}
         />
       )}
+
+      {/* Data Coverage at bottom */}
+      <DataCoverage symbol={symbol} />
     </div>
   );
 }

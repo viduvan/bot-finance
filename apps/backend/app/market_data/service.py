@@ -97,17 +97,103 @@ class MarketDataService:
     async def initial_data_load(self, symbol: str) -> dict:
         """Tải dữ liệu lịch sử ban đầu cho một cặp giao dịch trên tất cả các khung thời gian.
 
-        Tải về 500 nến mỗi khung thời gian (mới nhất).
+        Tải về 1000 nến mỗi khung thời gian (mới nhất) để đảm bảo đủ dữ liệu cho EMA 200.
         """
         timeframes = [ENTRY_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME, MACRO_TREND_TIMEFRAME]
         results = {}
 
         for tf in timeframes:
-            result = await self.fetch_and_store_candles(symbol, tf, limit=500)
+            result = await self.fetch_and_store_candles(symbol, tf, limit=1000)
             results[tf] = result
 
         logger.info("initial_data_load_complete", symbol=symbol, timeframes=list(results.keys()))
         return results
+
+    async def deep_backfill(
+        self,
+        symbol: str,
+        days_back: dict[str, int] | None = None,
+    ) -> dict:
+        """Tải dữ liệu lịch sử sâu cho tất cả các timeframe.
+
+        Fetch nhiều batch 1000 nến liên tiếp về quá khứ để đảm bảo có đủ dữ liệu
+        cho tất cả indicators (đặc biệt EMA 200 cần ~400 nến).
+
+        Args:
+            symbol: Cặp giao dịch (vd: BTCUSDT)
+            days_back: Số ngày cần lùi lại cho mỗi timeframe.
+                       Mặc định: {'15m': 30, '1h': 90, '4h': 365}
+
+        Returns:
+            dict: Kết quả cho từng timeframe với số nến đã lưu
+        """
+        defaults = {
+            ENTRY_TIMEFRAME: 30,               # 30 ngày × 96 nến/ngày = ~2880 nến 15m
+            TREND_CONFIRMATION_TIMEFRAME: 90,  # 90 ngày × 24 nến/ngày = ~2160 nến 1h
+            MACRO_TREND_TIMEFRAME: 365,        # 365 ngày × 6 nến/ngày = ~2190 nến 4h
+        }
+        days_map = days_back or defaults
+        results = {}
+
+        # Map timeframe → interval in seconds
+        interval_seconds = {
+            "1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800,
+            "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600,
+            "8h": 28800, "12h": 43200, "1d": 86400,
+        }
+
+        for tf in [ENTRY_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME, MACRO_TREND_TIMEFRAME]:
+            days = days_map.get(tf, 30)
+            tf_interval = interval_seconds.get(tf, 900)
+
+            end_time = datetime.now(UTC)
+            start_time = end_time - timedelta(days=days)
+
+            total_candles = 0
+            batch_end = end_time
+            batch_count = 0
+            max_batches = 20  # giới hạn để tránh quá tải API
+
+            logger.info("deep_backfill_start", symbol=symbol, timeframe=tf, days_back=days)
+
+            while batch_end > start_time and batch_count < max_batches:
+                batch_start = batch_end - timedelta(seconds=tf_interval * 1000)
+                if batch_start < start_time:
+                    batch_start = start_time
+
+                try:
+                    result = await self.fetch_and_store_candles(
+                        symbol=symbol,
+                        timeframe=tf,
+                        limit=1000,
+                        start_time=batch_start,
+                        end_time=batch_end,
+                    )
+                    fetched = result.get("count", 0)
+                    total_candles += fetched
+                    batch_count += 1
+
+                    # Move window back
+                    batch_end = batch_start
+                    if fetched == 0:
+                        break
+
+                except Exception as e:
+                    logger.error("deep_backfill_batch_failed", symbol=symbol, tf=tf, error=str(e))
+                    break
+
+            results[tf] = {
+                "candles_stored": total_candles,
+                "batches": batch_count,
+                "days_covered": days,
+            }
+            logger.info(
+                "deep_backfill_timeframe_complete",
+                symbol=symbol, timeframe=tf,
+                total_candles=total_candles, batches=batch_count,
+            )
+
+        return {"symbol": symbol, "results": results}
 
     # ── Truy xuất Nến ────────────────────────────────────────────
 
@@ -133,6 +219,62 @@ class MarketDataService:
     async def get_latest_price(self, symbol: str) -> dict:
         """Lấy giá mới nhất từ Binance REST API."""
         return await self._client.get_ticker_price(symbol)
+
+    async def get_candle_stats(self, symbol: str) -> dict:
+        """Trả về thống kê số lượng nến cho mỗi timeframe (dùng cho dashboard).
+
+        Trả về dict với count, oldest, newest, coverage_days, is_sufficient cho mỗi timeframe.
+        """
+        timeframes = [ENTRY_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME, MACRO_TREND_TIMEFRAME]
+        counts = await self._repo.get_candle_count_by_timeframe(symbol)
+        stats = {}
+
+        for tf in timeframes:
+            count = counts.get(tf, 0)
+            time_range = await self._repo.get_candle_time_range(symbol, tf)
+
+            # Tính số ngày coverage
+            oldest = time_range.get("oldest")
+            newest = time_range.get("newest")
+            coverage_days = None
+            if oldest and newest:
+                delta = newest - oldest
+                coverage_days = round(delta.total_seconds() / 86400, 1)
+
+            # Đủ dữ liệu khi: 15m≥500, 1h≥200, 4h≥100
+            min_required = {"15m": 500, "1h": 200, "4h": 100}.get(tf, 200)
+            is_sufficient = count >= min_required
+
+            stats[tf] = {
+                "count": count,
+                "oldest": oldest.isoformat() if oldest else None,
+                "newest": newest.isoformat() if newest else None,
+                "coverage_days": coverage_days,
+                "is_sufficient": is_sufficient,
+                "min_required": min_required,
+                "sufficiency_pct": min(100, round(count / min_required * 100)) if min_required > 0 else 0,
+            }
+
+        return {"symbol": symbol, "timeframes": stats}
+
+    async def get_candles_for_chart(
+        self,
+        symbol: str,
+        timeframe: str = ENTRY_TIMEFRAME,
+        before_time: datetime | None = None,
+        limit: int = 500,
+    ) -> list:
+        """Lấy nến cho chart với lazy loading theo thời gian.
+
+        Dùng để load thêm nến khi user scroll chart về quá khứ.
+        """
+        candles = await self._repo.get_candles_paginated(
+            symbol=symbol,
+            timeframe=timeframe,
+            before_time=before_time,
+            limit=limit,
+        )
+        return list(candles)
 
     # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────
 

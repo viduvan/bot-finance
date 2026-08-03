@@ -135,6 +135,63 @@ class MarketDataRepository:
         await self.db.commit()
         return result.rowcount or 0
 
+    async def get_candle_count_by_timeframe(self, symbol: str) -> dict[str, int]:
+        """Đếm số lượng nến hiện có trong DB cho mỗi timeframe.
+
+        Trả về dict: {'15m': 500, '1h': 250, '4h': 120}
+        """
+        result = await self.db.execute(
+            select(MarketCandle.timeframe, func.count().label("cnt"))
+            .where(MarketCandle.symbol == symbol)
+            .group_by(MarketCandle.timeframe)
+        )
+        return {row.timeframe: row.cnt for row in result.all()}
+
+    async def get_candle_time_range(self, symbol: str, timeframe: str) -> dict[str, datetime | None]:
+        """Lấy thời gian nến cũ nhất và mới nhất trong DB.
+
+        Trả về dict: {'oldest': datetime, 'newest': datetime, 'count': int}
+        """
+        result = await self.db.execute(
+            select(
+                func.min(MarketCandle.open_time).label("oldest"),
+                func.max(MarketCandle.open_time).label("newest"),
+                func.count().label("count"),
+            )
+            .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
+        )
+        row = result.one_or_none()
+        if row is None:
+            return {"oldest": None, "newest": None, "count": 0}
+        return {
+            "oldest": row.oldest,
+            "newest": row.newest,
+            "count": row.count or 0,
+        }
+
+    async def get_candles_paginated(
+        self,
+        symbol: str,
+        timeframe: str,
+        before_time: datetime | None = None,
+        limit: int = 500,
+    ) -> Sequence[MarketCandle]:
+        """Lấy nến với pagination theo thời gian (dùng để lazy load chart).
+
+        Lấy `limit` nến có open_time < before_time, sắp xếp cũ→mới.
+        """
+        query = (
+            select(MarketCandle)
+            .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
+            .order_by(MarketCandle.open_time.asc())
+            .limit(limit)
+        )
+        if before_time:
+            query = query.where(MarketCandle.open_time < before_time)
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
     # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────
 
     async def save_snapshot(self, snapshot_data: dict) -> MarketSnapshot:

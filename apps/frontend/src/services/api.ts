@@ -124,6 +124,21 @@ export const marketApi = {
     api.get<{ symbol: string; timeframe: string; count: number; candles: Candle[] }>(
       `/api/v1/market/candles?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}`
     ),
+  getCandlesHistory: (symbol = 'BTCUSDT', timeframe = '15m', limit = 500, before?: string) =>
+    api.get<{ symbol: string; timeframe: string; count: number; candles: Candle[] }>(
+      `/api/v1/market/candles/history?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}${before ? `&before=${before}` : ''}`
+    ),
+  getCandleStats: (symbol: string) =>
+    api.get<{
+      symbol: string;
+      timeframes: Record<string, {
+        count: number; oldest: string | null; newest: string | null;
+        coverage_days: number | null; is_sufficient: boolean;
+        min_required: number; sufficiency_pct: number;
+      }>;
+    }>(`/api/v1/market/candles/stats/${symbol}`),
+  deepBackfill: (symbol: string, days15m = 30, days1h = 90, days4h = 365) =>
+    api.post(`/api/v1/market/candles/deep-backfill?symbol=${symbol}&days_15m=${days15m}&days_1h=${days1h}&days_4h=${days4h}`),
   ticker: (symbol: string) => api.get<Ticker>(`/api/v1/market/ticker/${symbol}`),
   orderbook: (symbol: string, limit = 20) =>
     api.get<OrderBookData>(`/api/v1/market/orderbook/${symbol}?limit=${limit}`),
@@ -136,6 +151,7 @@ export const marketApi = {
   exchangeInfo: (symbol: string) => api.get<SymbolInfo>(`/api/v1/market/exchange-info/${symbol}`),
   initialLoad: (symbol = 'BTCUSDT') => api.post(`/api/v1/market/candles/initial-load?symbol=${symbol}`),
 };
+
 
 // ── Features & Strategy ─────────────────────────────────────────
 

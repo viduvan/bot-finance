@@ -103,6 +103,85 @@ async def initial_data_load(
     return {"status": "ok", "symbol": symbol, "results": results}
 
 
+@router.post("/candles/deep-backfill")
+async def deep_backfill_candles(
+    user: CurrentUser,
+    db: DBSession,
+    symbol: str = Query(default="BTCUSDT"),
+    days_15m: int = Query(default=30, ge=1, le=90, description="Số ngày lùi lại cho 15m"),
+    days_1h: int = Query(default=90, ge=1, le=365, description="Số ngày lùi lại cho 1h"),
+    days_4h: int = Query(default=365, ge=1, le=730, description="Số ngày lùi lại cho 4h"),
+) -> dict:
+    """Tải dữ liệu lịch sử sâu theo nhiều batch để đảm bảo đủ nến cho tất cả indicators.
+
+    - 15m: mặc định 30 ngày (~2880 nến) — đủ cho EMA 200
+    - 1h:  mặc định 90 ngày (~2160 nến)
+    - 4h:  mặc định 365 ngày (~2190 nến)
+    """
+    service = _get_market_service(db)
+    results = await service.deep_backfill(
+        symbol=symbol,
+        days_back={"15m": days_15m, "1h": days_1h, "4h": days_4h},
+    )
+    return {"status": "ok", **results}
+
+
+@router.get("/candles/stats/{symbol}")
+async def get_candle_stats(
+    symbol: str,
+    user: CurrentUser,
+    db: DBSession,
+) -> dict:
+    """Trả về thống kê số lượng nến cho mỗi timeframe — dùng cho Dashboard Data Coverage widget."""
+    service = _get_market_service(db)
+    return await service.get_candle_stats(symbol)
+
+
+@router.get("/candles/history")
+async def get_candles_history(
+    user: CurrentUser,
+    db: DBSession,
+    symbol: str = Query(default="BTCUSDT"),
+    timeframe: str = Query(default="15m"),
+    before: str = Query(default=None, description="ISO datetime — lấy nến trước thời điểm này"),
+    limit: int = Query(default=500, ge=1, le=1000),
+) -> dict:
+    """Lấy nến với pagination theo thời gian — dùng cho lazy loading khi scroll chart về quá khứ."""
+    service = _get_market_service(db)
+
+    before_time: datetime | None = None
+    if before:
+        try:
+            before_time = datetime.fromisoformat(before.replace("Z", "+00:00"))
+        except ValueError:
+            before_time = None
+
+    candles = await service.get_candles_for_chart(
+        symbol=symbol,
+        timeframe=timeframe,
+        before_time=before_time,
+        limit=limit,
+    )
+
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "count": len(candles),
+        "candles": [
+            {
+                "open_time": c.open_time.isoformat(),
+                "close_time": c.close_time.isoformat(),
+                "open": str(c.open),
+                "high": str(c.high),
+                "low": str(c.low),
+                "close": str(c.close),
+                "volume": str(c.volume),
+            }
+            for c in candles
+        ],
+    }
+
+
 # ── Ticker ───────────────────────────────────────────────────────
 
 

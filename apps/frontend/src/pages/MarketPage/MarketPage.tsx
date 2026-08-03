@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
 import { marketApi, type Ticker, type OrderBookData } from '../../services/api';
+import CandlestickChart from '../../components/CandlestickChart/CandlestickChart';
+import DataCoverage from '../../components/DataCoverage/DataCoverage';
 import './MarketPage.css';
 
 interface Props { symbol: string; }
@@ -118,6 +120,17 @@ export default function MarketPage({ symbol }: Props) {
 
   return (
     <div className="page-container stagger">
+      {/* Candlestick Chart — full width at top */}
+      <div className="card animate-fade-in" style={{ padding: 0, overflow: 'hidden' }}>
+        <CandlestickChart
+          symbol={symbol}
+          height={440}
+          showVolume
+          showEma
+          autoRefreshMs={30000}
+        />
+      </div>
+
       {/* Ticker Summary */}
       <div className="market-ticker-summary card animate-fade-in">
         <div className="mts-left">
@@ -209,6 +222,7 @@ export default function MarketPage({ symbol }: Props) {
         </div>
 
         {/* Market Snapshot */}
+
         <div className="card animate-fade-in">
           <h4 className="card-title">📸 Market Snapshot</h4>
           {errors.snapshot ? (
@@ -235,6 +249,9 @@ export default function MarketPage({ symbol }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Data Coverage widget — full width */}
+      <DataCoverage symbol={symbol} />
 
       {actionMsg && (
         <div className={`control-status control-status-${actionMsg.type} animate-fade-in`}>

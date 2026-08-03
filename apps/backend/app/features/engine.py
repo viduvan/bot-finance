@@ -43,7 +43,7 @@ class FeatureEngine:
     async def compute_and_store(
         self,
         symbol: str,
-        candle_limit: int = 250,
+        candle_limit: int = 500,
         include_orderbook: bool = True,
     ) -> dict[str, Any]:
         """Compute all features for a symbol and persist to DB.
@@ -95,6 +95,30 @@ class FeatureEngine:
 
         merged["computed_at"] = now.isoformat()
         merged["symbol"] = symbol
+
+        # Data sufficiency check
+        candle_count_15m = len(candles_15m)
+        MIN_FOR_EMA200 = 400
+        MIN_RECOMMENDED = 200
+        if candle_count_15m < MIN_FOR_EMA200:
+            merged["data_sufficient"] = False
+            merged["data_warning"] = (
+                f"Only {candle_count_15m} candles for 15m — EMA 200 may be inaccurate. "
+                f"Recommend >= {MIN_FOR_EMA200} candles. Run deep-backfill."
+            )
+            logger.warning(
+                "insufficient_candles_for_features",
+                symbol=symbol,
+                candle_count=candle_count_15m,
+                min_recommended=MIN_FOR_EMA200,
+            )
+        elif candle_count_15m < MIN_RECOMMENDED:
+            merged["data_sufficient"] = False
+            merged["data_warning"] = f"Only {candle_count_15m} candles — some indicators may be unstable."
+        else:
+            merged["data_sufficient"] = True
+            merged["data_warning"] = None
+        merged["candle_count_15m"] = candle_count_15m
 
         # Persist to DB
         await self._feature_repo.save(
