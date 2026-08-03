@@ -1,4 +1,4 @@
-"""Analysis Celery tasks — scheduled and manual-trigger analysis runs.
+ """Analysis Celery tasks — scheduled and manual-trigger analysis runs.
 
 Tasks:
   - run_scheduled_analysis: Runs for all configured symbols every 15min
