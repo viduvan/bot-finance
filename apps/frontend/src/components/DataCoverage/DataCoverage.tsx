@@ -58,11 +58,25 @@ export default function DataCoverage({ symbol, onBackfillComplete }: Props) {
       await loadStats();
       onBackfillComplete?.();
     } catch (e: unknown) {
-      const err = (e as { response?: { data?: { error?: { message?: string } } } });
-      setBackfillMsg({ type: 'error', text: `❌ ${err?.response?.data?.error?.message || 'Backfill failed'}` });
+      const err = e as { code?: string; message?: string; response?: { data?: { error?: { message?: string } } } };
+      // Timeout: backfill may still be running in background
+      if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout') || err?.message?.includes('Network Error')) {
+        setBackfillMsg({
+          type: 'success',
+          text: '⏳ Deep backfill started — loading data in background (check back in 2-3 minutes)',
+        });
+        // Poll stats after delay
+        setTimeout(async () => { await loadStats(); onBackfillComplete?.(); }, 15000);
+      } else {
+        setBackfillMsg({
+          type: 'error',
+          text: `❌ ${err?.response?.data?.error?.message || err?.message || 'Backfill failed'}`,
+        });
+      }
     } finally {
       setBackfilling(false);
     }
+
   };
 
   const TIMEFRAMES = ['15m', '1h', '4h'];

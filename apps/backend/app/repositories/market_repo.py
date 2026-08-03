@@ -178,19 +178,38 @@ class MarketDataRepository:
     ) -> Sequence[MarketCandle]:
         """Lấy nến với pagination theo thời gian (dùng để lazy load chart).
 
-        Lấy `limit` nến có open_time < before_time, sắp xếp cũ→mới.
+        - Không có before_time: lấy `limit` nến MỚI NHẤT (desc) — dùng cho initial load
+        - Có before_time: lấy `limit` nến CŨ HƠN before_time (asc) — dùng cho lazy load quá khứ
         """
-        query = (
-            select(MarketCandle)
-            .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
-            .order_by(MarketCandle.open_time.asc())
-            .limit(limit)
-        )
         if before_time:
-            query = query.where(MarketCandle.open_time < before_time)
+            # Lazy load: lấy nến cũ hơn before_time, sắp xếp cũ→mới để chart append đúng
+            query = (
+                select(MarketCandle)
+                .where(
+                    MarketCandle.symbol == symbol,
+                    MarketCandle.timeframe == timeframe,
+                    MarketCandle.open_time < before_time,
+                )
+                .order_by(MarketCandle.open_time.asc())
+                .limit(limit)
+            )
+        else:
+            # Initial load: lấy nến mới nhất trước, rồi đảo ngược để chart nhận đúng thứ tự cũ→mới
+            query = (
+                select(MarketCandle)
+                .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
+                .order_by(MarketCandle.open_time.desc())
+                .limit(limit)
+            )
 
         result = await self.db.execute(query)
-        return result.scalars().all()
+        candles = list(result.scalars().all())
+
+        # Đảo ngược khi initial load để đảm bảo thứ tự cũ→mới cho chart
+        if not before_time:
+            candles.reverse()
+
+        return candles
 
     # ── Ảnh chụp nhanh (Snapshots) ────────────────────────────────────────────────
 

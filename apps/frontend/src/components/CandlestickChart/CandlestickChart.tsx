@@ -1,21 +1,21 @@
 /**
  * CandlestickChart — Interactive financial candlestick chart
+ * Uses lightweight-charts v5 API
  *
  * Features:
- * - OHLCV candlestick rendering via lightweight-charts (TradingView)
- * - EMA 21 + EMA 50 overlay lines
+ * - OHLCV candlestick with EMA 21 + EMA 50 overlays
  * - Volume histogram sub-panel
- * - Crosshair tooltip with OHLCV values
- * - Zoom/pan with mouse or touch
- * - Timeframe selector (15m / 1h / 4h)
- * - Auto-refresh every 30 seconds
- * - Lazy loading older candles when scrolling left
+ * - Crosshair tooltip, zoom/pan, timeframe selector
+ * - Auto-refresh 30s, lazy loading older candles on scroll
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import {
   createChart,
   ColorType,
   CrosshairMode,
+  CandlestickSeries,
+  HistogramSeries,
+  LineSeries,
 } from 'lightweight-charts';
 import type {
   IChartApi,
@@ -24,6 +24,7 @@ import type {
   HistogramData,
   LineData,
   Time,
+  SeriesType,
 } from 'lightweight-charts';
 import { marketApi, type Candle } from '../../services/api';
 import './CandlestickChart.css';
@@ -79,8 +80,8 @@ function candleToChart(c: Candle): CandlestickData {
 }
 
 function candleToVolume(c: Candle): HistogramData {
-  const open = parseFloat(c.open);
   const close = parseFloat(c.close);
+  const open = parseFloat(c.open);
   return {
     time: (new Date(c.open_time).getTime() / 1000) as Time,
     value: parseFloat(c.volume),
@@ -89,10 +90,8 @@ function candleToVolume(c: Candle): HistogramData {
 }
 
 function formatTime(ts: Time): string {
-  const date = new Date((ts as number) * 1000);
-  return date.toLocaleString(undefined, {
-    month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+  return new Date((ts as number) * 1000).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
 
@@ -101,6 +100,15 @@ function formatPrice(v: number): string {
   if (v >= 1000) return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
   if (v >= 1) return v.toFixed(4);
   return v.toFixed(6);
+}
+
+function dedup<T extends { time: Time }>(arr: T[]): T[] {
+  const seen = new Set<number>();
+  return arr.filter(c => {
+    const t = c.time as number;
+    if (seen.has(t)) return false;
+    seen.add(t); return true;
+  });
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -122,10 +130,10 @@ export default function CandlestickChart({
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const ema21Ref = useRef<ISeriesApi<'Line'> | null>(null);
   const ema50Ref = useRef<ISeriesApi<'Line'> | null>(null);
-  const rawCandlesRef = useRef<CandlestickData[]>([]);
   const allCandlesRef = useRef<Candle[]>([]);
   const isLoadingMoreRef = useRef(false);
   const oldestTimeRef = useRef<string | null>(null);
+  const chartReadyRef = useRef(false);
 
   const [timeframe, setTimeframe] = useState<'15m' | '1h' | '4h'>(initialTimeframe);
   const [tooltip, setTooltip] = useState<OHLCTooltip | null>(null);
@@ -134,15 +142,21 @@ export default function CandlestickChart({
   const [error, setError] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // ── Chart initialization ──────────────────────────────────────
+  // ── Chart init ────────────────────────────────────────────────
 
   const initChart = useCallback(() => {
     const container = containerRef.current;
     if (!container) return undefined;
 
+    // Cleanup
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
+      candleSeriesRef.current = null;
+      volumeSeriesRef.current = null;
+      ema21Ref.current = null;
+      ema50Ref.current = null;
+      chartReadyRef.current = false;
     }
 
     const chart = createChart(container, {
@@ -153,7 +167,7 @@ export default function CandlestickChart({
         fontSize: 11,
       },
       width: container.clientWidth,
-      height: height,
+      height,
       grid: {
         vertLines: { color: 'rgba(255,255,255,0.04)' },
         horzLines: { color: 'rgba(255,255,255,0.04)' },
@@ -174,8 +188,8 @@ export default function CandlestickChart({
       },
     });
 
-    // Candlestick series
-    const candleSeries = chart.addCandlestickSeries({
+    // v5 API: chart.addSeries(SeriesDefinition, options)
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#22c55e',
       downColor: '#ef4444',
       borderUpColor: '#22c55e',
@@ -184,10 +198,9 @@ export default function CandlestickChart({
       wickDownColor: 'rgba(239,68,68,0.7)',
     });
 
-    // Volume histogram
     let volSeries: ISeriesApi<'Histogram'> | null = null;
     if (showVolume) {
-      volSeries = chart.addHistogramSeries({
+      volSeries = chart.addSeries(HistogramSeries, {
         priceFormat: { type: 'volume' },
         priceScaleId: 'volume',
         lastValueVisible: false,
@@ -198,11 +211,10 @@ export default function CandlestickChart({
       });
     }
 
-    // EMA lines
     let ema21Series: ISeriesApi<'Line'> | null = null;
     let ema50Series: ISeriesApi<'Line'> | null = null;
     if (showEma) {
-      ema21Series = chart.addLineSeries({
+      ema21Series = chart.addSeries(LineSeries, {
         color: '#f59e0b',
         lineWidth: 1,
         title: 'EMA21',
@@ -210,7 +222,7 @@ export default function CandlestickChart({
         lastValueVisible: false,
         crosshairMarkerVisible: false,
       });
-      ema50Series = chart.addLineSeries({
+      ema50Series = chart.addSeries(LineSeries, {
         color: '#8b5cf6',
         lineWidth: 1,
         title: 'EMA50',
@@ -222,7 +234,7 @@ export default function CandlestickChart({
 
     // Crosshair tooltip
     chart.subscribeCrosshairMove((param) => {
-      if (!param.time || !param.seriesData) return;
+      if (!param.time || !param.seriesData) { setTooltip(null); return; }
       const cd = param.seriesData.get(candleSeries) as CandlestickData | undefined;
       if (!cd) { setTooltip(null); return; }
       const vd = volSeries ? (param.seriesData.get(volSeries) as HistogramData | undefined) : undefined;
@@ -250,36 +262,47 @@ export default function CandlestickChart({
     volumeSeriesRef.current = volSeries;
     ema21Ref.current = ema21Series;
     ema50Ref.current = ema50Series;
+    chartReadyRef.current = true;
 
     return () => { ro.disconnect(); };
   }, [height, showVolume, showEma]);
 
-  // ── Data ──────────────────────────────────────────────────────
+  // ── Apply data to chart ───────────────────────────────────────
 
   const applyData = useCallback((candles: Candle[]) => {
-    allCandlesRef.current = candles;
-    const sorted = candles.map(candleToChart).sort((a, b) => (a.time as number) - (b.time as number));
-    // deduplicate
-    const deduped = sorted.filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
-    rawCandlesRef.current = deduped;
+    if (!chartReadyRef.current || !candleSeriesRef.current) return;
 
-    candleSeriesRef.current?.setData(deduped);
-    if (showVolume) {
-      const volData = candles.map(candleToVolume).sort((a, b) => (a.time as number) - (b.time as number));
-      const vDeduped = volData.filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
-      volumeSeriesRef.current?.setData(vDeduped);
+    allCandlesRef.current = candles;
+    const sorted = dedup(
+      candles.map(candleToChart).sort((a, b) => (a.time as number) - (b.time as number))
+    );
+
+    candleSeriesRef.current.setData(sorted);
+
+    if (showVolume && volumeSeriesRef.current) {
+      const volData = dedup(
+        candles.map(candleToVolume).sort((a, b) => (a.time as number) - (b.time as number))
+      );
+      volumeSeriesRef.current.setData(volData);
     }
+
     if (showEma) {
-      ema21Ref.current?.setData(computeEMA(deduped, 21));
-      ema50Ref.current?.setData(computeEMA(deduped, 50));
+      if (ema21Ref.current) ema21Ref.current.setData(computeEMA(sorted, 21));
+      if (ema50Ref.current) ema50Ref.current.setData(computeEMA(sorted, 50));
     }
-    setCandleCount(deduped.length);
+
+    setCandleCount(sorted.length);
 
     if (candles.length > 0) {
-      const oldest = candles.reduce((m, c) => c.open_time < m ? c.open_time : m, candles[0].open_time);
+      const oldest = candles.reduce(
+        (m, c) => c.open_time < m ? c.open_time : m,
+        candles[0].open_time
+      );
       oldestTimeRef.current = oldest;
     }
   }, [showVolume, showEma]);
+
+  // ── Load candles ──────────────────────────────────────────────
 
   const loadCandles = useCallback(async (tf: string) => {
     setLoading(true);
@@ -288,8 +311,8 @@ export default function CandlestickChart({
       const { data } = await marketApi.getCandlesHistory(symbol, tf, 500);
       applyData(data.candles || []);
     } catch (e: unknown) {
-      const apiErr = (e as { response?: { data?: { error?: { message?: string } } } });
-      setError(apiErr?.response?.data?.error?.message || 'Failed to load candles');
+      const apiErr = e as { response?: { data?: { error?: { message?: string } } } };
+      setError(apiErr?.response?.data?.error?.message || 'Failed to load candles. Check backend.');
     } finally {
       setLoading(false);
     }
@@ -301,31 +324,14 @@ export default function CandlestickChart({
     setIsLoadingMore(true);
     try {
       const { data } = await marketApi.getCandlesHistory(symbol, timeframe, 500, oldestTimeRef.current);
-      if (!data.candles || data.candles.length === 0) {
-        isLoadingMoreRef.current = false;
-        setIsLoadingMore(false);
-        return;
-      }
-      const merged = [...data.candles, ...allCandlesRef.current];
-      applyData(merged);
+      if (!data.candles?.length) return;
+      // Merge: prepend older candles
+      applyData([...data.candles, ...allCandlesRef.current]);
     } catch { /* silent */ } finally {
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
   }, [symbol, timeframe, applyData]);
-
-  // Register scroll handler after chart is ready
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const sub = () => {
-      const range = chartRef.current?.timeScale().getVisibleLogicalRange();
-      if (range && range.from <= 5 && !isLoadingMoreRef.current && oldestTimeRef.current) {
-        loadOlderCandles();
-      }
-    };
-    chartRef.current.timeScale().subscribeVisibleLogicalRangeChange(sub);
-    return () => { chartRef.current?.timeScale().unsubscribeVisibleLogicalRangeChange(sub); };
-  }, [loadOlderCandles, timeframe]);
 
   // ── Effects ───────────────────────────────────────────────────
 
@@ -334,26 +340,44 @@ export default function CandlestickChart({
     return cleanup;
   }, [initChart]);
 
+  // Load data after chart is initialized
   useEffect(() => {
-    rawCandlesRef.current = [];
     allCandlesRef.current = [];
     oldestTimeRef.current = null;
-    loadCandles(timeframe);
+    // Small delay to ensure chart is mounted
+    const t = setTimeout(() => loadCandles(timeframe), 100);
+    return () => clearTimeout(t);
   }, [symbol, timeframe, loadCandles]);
 
+  // Subscribe scroll for lazy load
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const handler = () => {
+      const range = chart.timeScale().getVisibleLogicalRange();
+      if (range && range.from <= 5 && !isLoadingMoreRef.current && oldestTimeRef.current) {
+        loadOlderCandles();
+      }
+    };
+    chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
+    return () => { chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler); };
+  }, [loadOlderCandles, timeframe]);
+
+  // Auto-refresh
   useEffect(() => {
     if (!autoRefreshMs) return;
     const t = setInterval(() => loadCandles(timeframe), autoRefreshMs);
     return () => clearInterval(t);
   }, [timeframe, loadCandles, autoRefreshMs]);
 
-  // Suppress signals prop warning
+  // Suppress unused signals warning
   void signals;
 
   // ── Render ────────────────────────────────────────────────────
 
   return (
     <div className="cc-wrapper">
+      {/* Header */}
       <div className="cc-header">
         <div className="cc-header-left">
           <span className="cc-symbol">{symbol}</span>
@@ -374,21 +398,31 @@ export default function CandlestickChart({
         </div>
       </div>
 
+      {/* Crosshair Tooltip */}
       {tooltip && (
         <div className="cc-tooltip">
           <span className="cc-tooltip-time">{tooltip.time}</span>
           <span className={`cc-tooltip-close ${tooltip.close >= tooltip.open ? 'up' : 'down'}`}>
-            C: {formatPrice(tooltip.close)}
+            C:{formatPrice(tooltip.close)}
           </span>
           <span className="cc-tooltip-ohlc">
             O:{formatPrice(tooltip.open)} H:{formatPrice(tooltip.high)} L:{formatPrice(tooltip.low)}
           </span>
-          {tooltip.ema21 != null && <span className="cc-tooltip-ema ema21">EMA21:{formatPrice(tooltip.ema21)}</span>}
-          {tooltip.ema50 != null && <span className="cc-tooltip-ema ema50">EMA50:{formatPrice(tooltip.ema50)}</span>}
-          {tooltip.volume > 0 && <span className="cc-tooltip-vol">Vol:{tooltip.volume.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>}
+          {tooltip.ema21 != null && (
+            <span className="cc-tooltip-ema ema21">EMA21:{formatPrice(tooltip.ema21)}</span>
+          )}
+          {tooltip.ema50 != null && (
+            <span className="cc-tooltip-ema ema50">EMA50:{formatPrice(tooltip.ema50)}</span>
+          )}
+          {tooltip.volume > 0 && (
+            <span className="cc-tooltip-vol">
+              Vol:{tooltip.volume.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+            </span>
+          )}
         </div>
       )}
 
+      {/* Chart Area */}
       <div className="cc-chart-container" style={{ height }}>
         {loading && (
           <div className="cc-overlay">
@@ -402,10 +436,15 @@ export default function CandlestickChart({
             <button className="cc-retry" onClick={() => loadCandles(timeframe)}>Retry</button>
           </div>
         )}
-        <div ref={containerRef} className="cc-canvas" style={{ opacity: loading ? 0.3 : 1 }} />
+        <div
+          ref={containerRef}
+          className="cc-canvas"
+          style={{ opacity: loading ? 0.3 : 1, width: '100%', height: '100%' }}
+        />
       </div>
 
-      {showEma && !loading && (
+      {/* Legend */}
+      {showEma && !loading && candleCount > 0 && (
         <div className="cc-legend">
           <span className="cc-legend-item ema21-color">━ EMA 21</span>
           <span className="cc-legend-item ema50-color">━ EMA 50</span>
