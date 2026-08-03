@@ -126,7 +126,7 @@ export const marketApi = {
     ),
   getCandlesHistory: (symbol = 'BTCUSDT', timeframe = '15m', limit = 500, before?: string) =>
     api.get<{ symbol: string; timeframe: string; count: number; candles: Candle[] }>(
-      `/api/v1/market/candles/history?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}${before ? `&before=${before}` : ''}`
+      `/api/v1/market/candles/history?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`
     ),
   getCandleStats: (symbol: string) =>
     api.get<{
