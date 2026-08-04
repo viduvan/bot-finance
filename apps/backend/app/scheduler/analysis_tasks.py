@@ -132,7 +132,13 @@ def run_scheduled_analysis(self) -> dict:
     results = {}
     for symbol in symbols:
         try:
-            result = _run_async(_analyze_symbol(symbol))
+            # Each symbol gets its own fresh event loop to prevent
+            # "Future attached to a different loop" when running sequentially
+            loop = asyncio.new_event_loop()
+            try:
+                result = loop.run_until_complete(_analyze_symbol(symbol))
+            finally:
+                loop.close()
             results[symbol] = {"status": "success", "direction": result.get("final_direction")}
         except Exception as e:
             logger.error("scheduled_analysis_symbol_failed", symbol=symbol, error=str(e))

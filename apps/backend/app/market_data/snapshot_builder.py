@@ -29,15 +29,15 @@ class SnapshotBuilder:
 
         Trả về một dict sẵn sàng để insert vào model MarketSnapshot.
         """
-        # Lấy dữ liệu ticker và sổ lệnh đồng thời (concurrently)
         import asyncio
 
-        ticker_task = asyncio.create_task(self._client.get_ticker_24h(symbol))
-        book_task = asyncio.create_task(self._client.get_book_ticker(symbol))
-
         try:
-            ticker = await ticker_task
-            book = await book_task
+            # Use asyncio.gather instead of create_task — gather works inside
+            # both a running loop (FastAPI) and a new loop (_run_async in Celery)
+            ticker, book = await asyncio.gather(
+                self._client.get_ticker_24h(symbol),
+                self._client.get_book_ticker(symbol),
+            )
         except Exception as e:
             logger.error("snapshot_build_failed", symbol=symbol, error=str(e))
             raise

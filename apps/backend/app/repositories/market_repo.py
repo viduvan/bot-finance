@@ -215,7 +215,11 @@ class MarketDataRepository:
 
     async def save_snapshot(self, snapshot_data: dict) -> MarketSnapshot:
         """Lưu một ảnh chụp nhanh thị trường."""
-        snapshot = MarketSnapshot(**snapshot_data)
+        # Filter to only known model columns — builder may return extra fields
+        # (e.g. quote_volume_24h, price_change_24h) that aren't in the ORM model
+        valid_fields = {c.key for c in MarketSnapshot.__table__.columns}
+        filtered = {k: v for k, v in snapshot_data.items() if k in valid_fields}
+        snapshot = MarketSnapshot(**filtered)
         self.db.add(snapshot)
         await self.db.flush()
         return snapshot
