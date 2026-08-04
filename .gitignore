@@ -244,6 +244,8 @@ master_context.txt
 .idea/
 *.swp
 *.swo
+.agents/
+
 
 # OS
 .DS_Store
