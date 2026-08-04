@@ -37,19 +37,27 @@ def sync_candles_task(self, symbol: str | None = None, timeframe: str = "15m") -
     async def _sync():
         from app.database.session import async_session_factory
         from app.market_data.service import MarketDataService
+        from app.market_data.binance_rest import BinanceRestClient
 
         symbols = [symbol] if symbol else settings.trading_symbols
 
         results = {}
-        async with async_session_factory() as db:
-            service = MarketDataService(db)
-            for sym in symbols:
-                try:
-                    result = await service.fetch_and_store_candles(sym, timeframe, limit=50)
-                    results[sym] = {"count": result["count"], "healthy": result["quality"]["is_healthy"]}
-                except Exception as e:
-                    logger.error("candle_sync_failed", symbol=sym, error=str(e))
-                    results[sym] = {"error": str(e)}
+        # Create fresh client per task — the module-level singleton binds its
+        # httpx connection pool to whichever event loop runs first, causing
+        # 'Event loop is closed' on subsequent Celery task invocations.
+        fresh_client = BinanceRestClient()
+        try:
+            async with async_session_factory() as db:
+                service = MarketDataService(db, client=fresh_client)
+                for sym in symbols:
+                    try:
+                        result = await service.fetch_and_store_candles(sym, timeframe, limit=50)
+                        results[sym] = {"count": result["count"], "healthy": result["quality"]["is_healthy"]}
+                    except Exception as e:
+                        logger.error("candle_sync_failed", symbol=sym, error=str(e))
+                        results[sym] = {"error": str(e)}
+        finally:
+            await fresh_client.close()
 
         return results
 
@@ -69,20 +77,26 @@ def refresh_snapshots_task(self) -> dict:
     async def _refresh():
         from app.database.session import async_session_factory
         from app.market_data.service import MarketDataService
+        from app.market_data.binance_rest import BinanceRestClient
 
         results = {}
-        async with async_session_factory() as db:
-            service = MarketDataService(db)
-            for symbol in settings.trading_symbols:
-                try:
-                    snapshot = await service.build_and_save_snapshot(symbol)
-                    results[symbol] = {
-                        "price": str(snapshot["last_price"]),
-                        "spread_bps": str(snapshot["spread_bps"]),
-                    }
-                except Exception as e:
-                    logger.error("snapshot_refresh_failed", symbol=symbol, error=str(e))
-                    results[symbol] = {"error": str(e)}
+        # Create fresh client per task to avoid event loop contamination
+        fresh_client = BinanceRestClient()
+        try:
+            async with async_session_factory() as db:
+                service = MarketDataService(db, client=fresh_client)
+                for symbol in settings.trading_symbols:
+                    try:
+                        snapshot = await service.build_and_save_snapshot(symbol)
+                        results[symbol] = {
+                            "price": str(snapshot["last_price"]),
+                            "spread_bps": str(snapshot["spread_bps"]),
+                        }
+                    except Exception as e:
+                        logger.error("snapshot_refresh_failed", symbol=symbol, error=str(e))
+                        results[symbol] = {"error": str(e)}
+        finally:
+            await fresh_client.close()
 
         return results
 
