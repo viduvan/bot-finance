@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -14,8 +15,8 @@ from app.database.base import Base
 from app.database.session import get_db_session
 from app.main import app
 
-# Use SQLite for tests (fast, no external dependency)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+# Use DATABASE_URL from env (CI uses PostgreSQL), fallback to SQLite for local dev
+TEST_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
 
 @pytest.fixture(scope="session")
