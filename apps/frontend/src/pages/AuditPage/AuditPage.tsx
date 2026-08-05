@@ -31,11 +31,11 @@ export default function AuditPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { limit: 500 };
+      const params: any = { limit: 200 };
       if (actionFilter) params.action = actionFilter;
       const { data } = await auditApi.logs(params);
       setLogs(data.logs || []);
-    } catch { /* silent */ }
+    } catch (err) { console.error('[AuditPage] Error:', err); }
     setLoading(false);
   }, [actionFilter]);
 
