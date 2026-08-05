@@ -5,6 +5,7 @@ Usage:
                        resource_type="proposal", resource_id=str(proposal.id),
                        service="proposals", request=request)
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -33,7 +34,11 @@ async def record_audit(
         ip: str | None = None
         if request:
             forwarded = request.headers.get("X-Forwarded-For")
-            ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else None)
+            ip = (
+                forwarded.split(",")[0].strip()
+                if forwarded
+                else (request.client.host if request.client else None)
+            )
 
         entry = AuditLog(
             user_id=user_id,

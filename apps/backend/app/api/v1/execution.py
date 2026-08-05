@@ -29,8 +29,8 @@ async def execute_proposal(
 
     Simulates fill, creates position, transitions proposal to EXECUTED.
     """
-    from app.repositories.proposal_repo import ProposalRepository
     from app.execution.service import PaperExecutionServiceAsync
+    from app.repositories.proposal_repo import ProposalRepository
 
     repo = ProposalRepository(db)
     proposal = await repo.get_by_id(proposal_id)
@@ -50,7 +50,9 @@ async def execute_proposal(
         "recommendation": proposal.recommendation,
         "status": proposal.status,
         "suggested_price": str(proposal.suggested_price) if proposal.suggested_price else None,
-        "suggested_quantity": str(proposal.suggested_quantity) if proposal.suggested_quantity else None,
+        "suggested_quantity": str(proposal.suggested_quantity)
+        if proposal.suggested_quantity
+        else None,
         "suggested_order_type": proposal.suggested_order_type,
         "stop_loss_price": str(proposal.stop_loss_price) if proposal.stop_loss_price else None,
         "environment": proposal.environment,
@@ -89,6 +91,7 @@ async def list_positions(
 ) -> dict:
     """List paper trading positions."""
     from sqlalchemy import select
+
     from app.models.position import Position
 
     query = select(Position).where(Position.environment == "PAPER")
@@ -115,11 +118,10 @@ async def get_position(
 ) -> dict:
     """Get a specific position by ID."""
     from sqlalchemy import select
+
     from app.models.position import Position
 
-    result = await db.execute(
-        select(Position).where(Position.id == position_id)
-    )
+    result = await db.execute(select(Position).where(Position.id == position_id))
     pos = result.scalar_one_or_none()
 
     if not pos:
@@ -136,6 +138,7 @@ async def list_trade_results(
 ) -> dict:
     """List completed trade results (closed positions)."""
     from sqlalchemy import select
+
     from app.models.position import TradeResult
 
     query = select(TradeResult).where(TradeResult.environment == "PAPER")
@@ -158,7 +161,8 @@ async def get_pnl_summary(
     db: DBSession,
 ) -> dict:
     """Get aggregated P&L summary for paper trading."""
-    from sqlalchemy import select, func
+    from sqlalchemy import func, select
+
     from app.models.position import TradeResult
 
     result = await db.execute(

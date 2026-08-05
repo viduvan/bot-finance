@@ -13,9 +13,8 @@ from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
-from app.core.enums import Permission, ROLE_PERMISSIONS, UserRole
-from app.core.exceptions import AuthenticationError, AuthorizationError, TokenExpiredError
+from app.core.enums import ROLE_PERMISSIONS, Permission, UserRole
+from app.core.exceptions import AuthenticationError, TokenExpiredError
 from app.core.security import decode_token
 from app.database.session import get_db_session
 from app.models.user import User

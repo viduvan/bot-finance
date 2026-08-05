@@ -1,6 +1,6 @@
 """Trình tạo ảnh chụp nhanh thị trường (Market snapshot builder).
 
-Tạo các ảnh chụp nhanh thị trường tại một thời điểm từ dữ liệu REST API, kết hợp 
+Tạo các ảnh chụp nhanh thị trường tại một thời điểm từ dữ liệu REST API, kết hợp
 giá ticker, sổ lệnh và dữ liệu nến thành một MarketSnapshot thống nhất.
 """
 
@@ -84,7 +84,9 @@ class SnapshotBuilder:
 
         return snapshot
 
-    def is_snapshot_fresh(self, snapshot: dict | Any, max_age: float = MAX_SNAPSHOT_AGE_SECONDS) -> bool:
+    def is_snapshot_fresh(
+        self, snapshot: dict | Any, max_age: float = MAX_SNAPSHOT_AGE_SECONDS
+    ) -> bool:
         """Kiểm tra xem ảnh chụp nhanh còn đủ mới để phân tích hay không."""
         timestamp = getattr(snapshot, "timestamp", None) or snapshot.get("timestamp")
         if timestamp is None:

@@ -5,11 +5,11 @@ Protects API from abuse with configurable limits per endpoint group.
 
 from __future__ import annotations
 
+from fastapi import FastAPI, Request
+from fastapi.responses import ORJSONResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from fastapi import FastAPI, Request
-from fastapi.responses import ORJSONResponse
 
 from app.config import settings
 

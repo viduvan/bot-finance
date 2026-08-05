@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.dependencies import CurrentUser, DBSession
-from app.models.order import Order, OrderFill
+from app.models.order import Order
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -52,9 +52,7 @@ async def get_order(
 ) -> dict:
     """Get a specific order with fills."""
     result = await db.execute(
-        select(Order)
-        .options(selectinload(Order.fills))
-        .where(Order.id == order_id)
+        select(Order).options(selectinload(Order.fills)).where(Order.id == order_id)
     )
     order = result.scalar_one_or_none()
     if not order:

@@ -12,10 +12,10 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from app.core.security import hash_password
-from app.models.user import User
-from app.models.proposal import TradeProposal
+from app.models.agent import AgentWorkflow
 from app.models.order import Order
-from app.models.agent import AgentWorkflow, AgentRun
+from app.models.proposal import TradeProposal
+from app.models.user import User
 
 
 class UserFactory:

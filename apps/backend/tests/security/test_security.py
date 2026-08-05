@@ -22,7 +22,6 @@ from decimal import Decimal
 
 import pytest
 
-
 # ─────────────────────────────────────────────────────────────────
 # ApprovalToken Security
 # ─────────────────────────────────────────────────────────────────
@@ -31,6 +30,7 @@ import pytest
 @pytest.fixture
 def token_manager():
     from app.proposals.approval_token import ApprovalTokenManager
+
     return ApprovalTokenManager(secret="test-secret-for-security-tests")
 
 
@@ -47,7 +47,6 @@ def sample_proposal():
 
 
 class TestApprovalTokenSecurity:
-
     def test_replay_attack_blocked(self, token_manager, sample_proposal):
         """Same token cannot be used twice (replay protection)."""
         token = token_manager.issue(sample_proposal, user_id="user-1", ttl_seconds=60)
@@ -125,6 +124,7 @@ class TestApprovalTokenSecurity:
     def test_different_secrets_produce_different_tokens(self, sample_proposal):
         """Tokens from different secrets must not cross-validate."""
         from app.proposals.approval_token import ApprovalTokenManager
+
         mgr1 = ApprovalTokenManager(secret="secret-A")
         mgr2 = ApprovalTokenManager(secret="secret-B")
 
@@ -149,7 +149,6 @@ class TestApprovalTokenSecurity:
 
 
 class TestJWTSecurity:
-
     def test_refresh_token_rejected_as_access_token(self):
         """Refresh token cannot be used where access token is expected."""
         from app.core.security import create_refresh_token, decode_token
@@ -170,7 +169,7 @@ class TestJWTSecurity:
         assert "sub" in payload
         assert "role" in payload
         assert "type" in payload
-        assert "jti" in payload      # JWT ID — prevents replay at transport level
+        assert "jti" in payload  # JWT ID — prevents replay at transport level
         assert "exp" in payload
         assert "iat" in payload
         assert payload["type"] == "access"
@@ -178,6 +177,7 @@ class TestJWTSecurity:
     def test_wrong_secret_rejected(self):
         """Token signed with wrong secret should raise AuthenticationError."""
         from jose import jwt
+
         from app.core.exceptions import AuthenticationError
         from app.core.security import decode_token
 
@@ -193,19 +193,23 @@ class TestJWTSecurity:
 
     def test_expired_jwt_raises_token_expired_error(self):
         """Expired JWT should raise TokenExpiredError, not generic error."""
+        import time
+
         from jose import jwt
+
+        from app.config import settings
         from app.core.exceptions import TokenExpiredError
         from app.core.security import decode_token
-        from app.config import settings
 
-        import time
         expired_payload = {
             "sub": "user-1",
             "type": "access",
             "exp": int(time.time()) - 10,  # 10 seconds in the past
             "jti": "test-jti",
         }
-        expired_token = jwt.encode(expired_payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+        expired_token = jwt.encode(
+            expired_payload, settings.jwt_secret, algorithm=settings.jwt_algorithm
+        )
 
         with pytest.raises(TokenExpiredError):
             decode_token(expired_token)
@@ -217,10 +221,9 @@ class TestJWTSecurity:
 
 
 class TestEncryptionSecurity:
-
     def test_encrypt_decrypt_roundtrip(self):
         """Encrypted value must decrypt to original."""
-        from app.core.security import encrypt_value, decrypt_value
+        from app.core.security import decrypt_value, encrypt_value
 
         original = "super-secret-api-key-12345"
         ciphertext = encrypt_value(original)
@@ -251,7 +254,6 @@ class TestEncryptionSecurity:
 
 
 class TestInputSanitization:
-
     def test_proposal_builder_rejects_non_numeric_price(self):
         """ProposalBuilder must reject non-numeric price values gracefully."""
         from app.proposals.builder import ProposalBuilder
@@ -308,7 +310,6 @@ class TestInputSanitization:
 
 
 class TestPriceDriftGuardSecurity:
-
     def test_zero_approved_price_triggers_reconfirm(self):
         """Zero approved price should always trigger reconfirm (avoid divide-by-zero)."""
         from app.proposals.price_drift import PriceDriftGuard
@@ -339,10 +340,10 @@ class TestPriceDriftGuardSecurity:
 
 
 class TestImportBoundaries:
-
     def test_execution_module_does_not_import_agents(self):
         """Execution module must not import from agents (isolation)."""
         import app.execution.service as svc_module
+
         source = open(svc_module.__file__).read()
         # The execution service should not directly import agent code
         assert "from app.agents" not in source
@@ -351,6 +352,7 @@ class TestImportBoundaries:
     def test_agents_module_does_not_import_execution(self):
         """Agent orchestrator must not import from execution module."""
         import app.agents.orchestrator as orch_module
+
         source = open(orch_module.__file__).read()
         assert "from app.execution" not in source
         assert "import app.execution" not in source
@@ -358,11 +360,13 @@ class TestImportBoundaries:
     def test_proposals_module_does_not_import_agents_directly(self):
         """Proposals service must not import agent code (decoupled)."""
         import app.proposals.service as prop_svc
+
         source = open(prop_svc.__file__).read()
         assert "from app.agents" not in source
 
     def test_risk_engine_does_not_import_agents(self):
         """Risk engine is purely deterministic — no agent imports."""
         import app.risk.engine as risk_eng
+
         source = open(risk_eng.__file__).read()
         assert "from app.agents" not in source

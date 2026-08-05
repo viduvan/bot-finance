@@ -72,7 +72,9 @@ async def get_status() -> dict:
     db_status = "disconnected"
     try:
         from sqlalchemy import text
+
         from app.database.session import engine
+
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
             db_status = "connected"
@@ -83,6 +85,7 @@ async def get_status() -> dict:
     redis_status = "disconnected"
     try:
         import redis.asyncio as redis
+
         r = redis.from_url(settings.redis_url)
         if await r.ping():
             redis_status = "connected"
@@ -96,13 +99,17 @@ async def get_status() -> dict:
     try:
         if primary == "ollama":
             import httpx
+
             async with httpx.AsyncClient(timeout=5.0) as c:
                 resp = await c.get(f"{settings.ollama_base_url}/api/tags")
                 if resp.status_code == 200:
                     llm_status = "connected"
-        elif primary == "gemini" and settings.gemini_api_key:
-            llm_status = "connected"
-        elif primary == "openai" and settings.openai_api_key:
+        elif (
+            primary == "gemini"
+            and settings.gemini_api_key
+            or primary == "openai"
+            and settings.openai_api_key
+        ):
             llm_status = "connected"
     except Exception as e:
         logger.warning("status_llm_check_failed", provider=primary, error=str(e))
@@ -111,6 +118,7 @@ async def get_status() -> dict:
     binance_status = "disconnected"
     try:
         from app.market_data.binance_rest import binance_client
+
         res = await binance_client.get_ticker_price("BTCUSDT")
         if res and "price" in res:
             binance_status = "connected"
@@ -141,7 +149,9 @@ async def get_status() -> dict:
 @router.get("/license")
 async def get_license() -> dict:
     """Return license and LLM integration info."""
-    primary_provider = settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    primary_provider = (
+        settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    )
     if primary_provider == "ollama":
         active_model = settings.ollama_model
         llm_status = "local"

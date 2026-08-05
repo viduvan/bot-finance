@@ -52,7 +52,9 @@ class VolatilityFeatures:
             bandwidths = [float(v) for v in bb_all["bandwidth"] if v is not None]
             if len(bandwidths) >= 20:
                 avg_bw = sum(bandwidths[-20:]) / 20
-                result["bb_squeeze"] = float(bw) < avg_bw * 0.5  # Squeeze = BW < 50% of 20-period avg
+                result["bb_squeeze"] = (
+                    float(bw) < avg_bw * 0.5
+                )  # Squeeze = BW < 50% of 20-period avg
                 result["bb_expansion"] = float(bw) > avg_bw * 1.5
             else:
                 result["bb_squeeze"] = None
@@ -100,13 +102,11 @@ class VolatilityFeatures:
         if len(candles) < period + 1:
             return None
 
-        closes = [float(c["close"]) for c in candles[-(period + 1):]]
+        closes = [float(c["close"]) for c in candles[-(period + 1) :]]
 
         # Log returns
         log_returns = [
-            np.log(closes[i] / closes[i - 1])
-            for i in range(1, len(closes))
-            if closes[i - 1] > 0
+            np.log(closes[i] / closes[i - 1]) for i in range(1, len(closes)) if closes[i - 1] > 0
         ]
 
         if len(log_returns) < period:
@@ -124,10 +124,10 @@ class VolatilityFeatures:
     def _classify_candle(self, body_pct: float) -> str:
         """Classify candle type based on body-to-range ratio."""
         if body_pct < 20:
-            return "DOJI"       # Very small body — indecision
+            return "DOJI"  # Very small body — indecision
         if body_pct < 50:
             return "SPINNING_TOP"  # Moderate body
-        return "MARUBOZU"       # Large body — conviction
+        return "MARUBOZU"  # Large body — conviction
 
 
 # Shared singleton

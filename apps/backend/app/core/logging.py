@@ -74,24 +74,24 @@ def setup_logging() -> None:
 
 # ── Secret Filter ────────────────────────────────────────────────
 
-_SECRET_KEYS = frozenset({
-    "password",
-    "secret",
-    "token",
-    "api_key",
-    "api_secret",
-    "authorization",
-    "cookie",
-    "encryption_key",
-    "jwt_secret",
-    "approval_token_secret",
-    "mfa_secret",
-})
+_SECRET_KEYS = frozenset(
+    {
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        "api_secret",
+        "authorization",
+        "cookie",
+        "encryption_key",
+        "jwt_secret",
+        "approval_token_secret",
+        "mfa_secret",
+    }
+)
 
 
-def _secret_filter(
-    logger: Any, method_name: str, event_dict: dict[str, Any]
-) -> dict[str, Any]:
+def _secret_filter(logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive values from log output.
 
     Any key containing 'secret', 'password', 'token', 'api_key' etc.

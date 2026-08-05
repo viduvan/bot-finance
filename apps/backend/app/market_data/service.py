@@ -1,24 +1,21 @@
 """Dịch vụ dữ liệu thị trường — Lớp điều phối (orchestration layer).
 
-Phối hợp giữa REST client, WebSocket manager, repository, validator, và 
+Phối hợp giữa REST client, WebSocket manager, repository, validator, và
 snapshot builder để cung cấp một API dữ liệu thị trường thống nhất.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.constants import ENTRY_TIMEFRAME, MACRO_TREND_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME
-from app.core.exceptions import StaleDataError
 from app.core.metrics import MARKET_DATA_STALENESS
 from app.market_data.binance_rest import BinanceRestClient, binance_client
-from app.market_data.binance_ws import ws_manager
-from app.market_data.data_validator import DataValidator, data_validator, TIMEFRAME_INTERVALS
+from app.market_data.data_validator import DataValidator, data_validator
 from app.market_data.snapshot_builder import SnapshotBuilder
 from app.repositories.market_repo import MarketDataRepository
 
@@ -75,7 +72,10 @@ class MarketDataService:
         )
 
         if not candles:
-            return {"count": 0, "quality": {"is_healthy": False, "warnings": ["Không có dữ liệu trả về"]}}
+            return {
+                "count": 0,
+                "quality": {"is_healthy": False, "warnings": ["Không có dữ liệu trả về"]},
+            }
 
         # Kiểm tra chất lượng dữ liệu
         quality = self._validator.validate_candles(candles, symbol, timeframe)
@@ -128,18 +128,27 @@ class MarketDataService:
             dict: Kết quả cho từng timeframe với số nến đã lưu
         """
         defaults = {
-            ENTRY_TIMEFRAME: 30,               # 30 ngày × 96 nến/ngày = ~2880 nến 15m
+            ENTRY_TIMEFRAME: 30,  # 30 ngày × 96 nến/ngày = ~2880 nến 15m
             TREND_CONFIRMATION_TIMEFRAME: 90,  # 90 ngày × 24 nến/ngày = ~2160 nến 1h
-            MACRO_TREND_TIMEFRAME: 365,        # 365 ngày × 6 nến/ngày = ~2190 nến 4h
+            MACRO_TREND_TIMEFRAME: 365,  # 365 ngày × 6 nến/ngày = ~2190 nến 4h
         }
         days_map = days_back or defaults
         results = {}
 
         # Map timeframe → interval in seconds
         interval_seconds = {
-            "1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800,
-            "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600,
-            "8h": 28800, "12h": 43200, "1d": 86400,
+            "1m": 60,
+            "3m": 180,
+            "5m": 300,
+            "15m": 900,
+            "30m": 1800,
+            "1h": 3600,
+            "2h": 7200,
+            "4h": 14400,
+            "6h": 21600,
+            "8h": 28800,
+            "12h": 43200,
+            "1d": 86400,
         }
 
         for tf in [ENTRY_TIMEFRAME, TREND_CONFIRMATION_TIMEFRAME, MACRO_TREND_TIMEFRAME]:
@@ -189,8 +198,10 @@ class MarketDataService:
             }
             logger.info(
                 "deep_backfill_timeframe_complete",
-                symbol=symbol, timeframe=tf,
-                total_candles=total_candles, batches=batch_count,
+                symbol=symbol,
+                timeframe=tf,
+                total_candles=total_candles,
+                batches=batch_count,
             )
 
         return {"symbol": symbol, "results": results}
@@ -252,7 +263,9 @@ class MarketDataService:
                 "coverage_days": coverage_days,
                 "is_sufficient": is_sufficient,
                 "min_required": min_required,
-                "sufficiency_pct": min(100, round(count / min_required * 100)) if min_required > 0 else 0,
+                "sufficiency_pct": min(100, round(count / min_required * 100))
+                if min_required > 0
+                else 0,
             }
 
         return {"symbol": symbol, "timeframes": stats}
@@ -281,7 +294,7 @@ class MarketDataService:
     async def build_and_save_snapshot(self, symbol: str) -> dict:
         """Tạo một ảnh chụp nhanh thị trường mới và lưu vào cơ sở dữ liệu."""
         snapshot_data = await self._snapshot_builder.build_snapshot(symbol)
-        snapshot = await self._repo.save_snapshot(snapshot_data)
+        await self._repo.save_snapshot(snapshot_data)
         await self.db.commit()
         return snapshot_data
 
@@ -334,9 +347,7 @@ class MarketDataService:
 
         # Thêm thông tin về độ trễ (staleness)
         latest = await self._repo.get_latest_candle(symbol, timeframe)
-        staleness = self._validator.check_staleness(
-            latest.open_time if latest else None, symbol
-        )
+        staleness = self._validator.check_staleness(latest.open_time if latest else None, symbol)
 
         # Cập nhật Prometheus metric
         if staleness["staleness_seconds"] is not None:
@@ -391,7 +402,9 @@ class MarketDataService:
                     total_backfilled += count
 
             except Exception as e:
-                logger.error("backfill_gap_failed", symbol=symbol, gap_start=str(gap_start), error=str(e))
+                logger.error(
+                    "backfill_gap_failed", symbol=symbol, gap_start=str(gap_start), error=str(e)
+                )
 
         logger.info(
             "backfill_complete",

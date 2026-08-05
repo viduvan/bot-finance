@@ -12,13 +12,19 @@ Handles:
 
 from __future__ import annotations
 
+import contextlib
 from decimal import Decimal
 from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.metrics import PROPOSALS_ACTIVE, PROPOSALS_APPROVED, PROPOSALS_CREATED, PROPOSALS_REJECTED
+from app.core.metrics import (
+    PROPOSALS_ACTIVE,
+    PROPOSALS_APPROVED,
+    PROPOSALS_CREATED,
+    PROPOSALS_REJECTED,
+)
 from app.proposals.approval_token import ApprovalTokenManager
 from app.proposals.builder import ProposalBuilder
 from app.proposals.price_drift import PriceDriftGuard
@@ -186,20 +192,22 @@ class ProposalService:
 
         await self._db.commit()
 
-        try:
+        with contextlib.suppress(Exception):
             PROPOSALS_APPROVED.labels(symbol=proposal.symbol).inc()
-        except Exception:
-            pass
 
         # Broadcast real-time event
         try:
             from app.api.websocket.connection_manager import event_manager
-            await event_manager.broadcast("proposal_update", {
-                "proposal_id": proposal_id,
-                "symbol": proposal.symbol,
-                "new_status": "APPROVED",
-                "message": "Proposal approved",
-            })
+
+            await event_manager.broadcast(
+                "proposal_update",
+                {
+                    "proposal_id": proposal_id,
+                    "symbol": proposal.symbol,
+                    "new_status": "APPROVED",
+                    "message": "Proposal approved",
+                },
+            )
         except Exception:
             pass
 
@@ -244,12 +252,16 @@ class ProposalService:
         # Broadcast real-time event
         try:
             from app.api.websocket.connection_manager import event_manager
-            await event_manager.broadcast("proposal_update", {
-                "proposal_id": proposal_id,
-                "symbol": proposal.symbol,
-                "new_status": "REJECTED",
-                "message": reason or "Proposal rejected",
-            })
+
+            await event_manager.broadcast(
+                "proposal_update",
+                {
+                    "proposal_id": proposal_id,
+                    "symbol": proposal.symbol,
+                    "new_status": "REJECTED",
+                    "message": reason or "Proposal rejected",
+                },
+            )
         except Exception:
             pass
 
@@ -317,10 +329,8 @@ class ProposalService:
 
         await self._db.commit()
 
-        try:
+        with contextlib.suppress(Exception):
             PROPOSALS_ACTIVE.dec()
-        except Exception:
-            pass
 
         return {"status": "CANCELLED", "proposal_id": proposal_id}
 
@@ -332,10 +342,14 @@ class ProposalService:
             "recommendation": proposal.recommendation,
             "status": proposal.status,
             "suggested_price": str(proposal.suggested_price) if proposal.suggested_price else None,
-            "suggested_quantity": str(proposal.suggested_quantity) if proposal.suggested_quantity else None,
+            "suggested_quantity": str(proposal.suggested_quantity)
+            if proposal.suggested_quantity
+            else None,
             "stop_loss_price": str(proposal.stop_loss_price) if proposal.stop_loss_price else None,
             "take_profit_prices": proposal.take_profit_prices,
-            "risk_reward_ratio": str(proposal.risk_reward_ratio) if proposal.risk_reward_ratio else None,
+            "risk_reward_ratio": str(proposal.risk_reward_ratio)
+            if proposal.risk_reward_ratio
+            else None,
             "estimated_fee": str(proposal.estimated_fee) if proposal.estimated_fee else None,
             "confidence": str(proposal.confidence) if proposal.confidence else None,
             "agent_consensus": proposal.agent_consensus,

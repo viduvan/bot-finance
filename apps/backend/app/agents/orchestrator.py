@@ -17,6 +17,7 @@ If critic says proceed_to_proposal=True → caller creates a proposal.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -80,7 +81,9 @@ class AnalysisResult:
             "order_flow": self.order_flow.model_dump() if self.order_flow else None,
             "risk_analysis": self.risk_analysis.model_dump() if self.risk_analysis else None,
             "critic": self.critic.model_dump() if self.critic else None,
-            "aggregated_signal": self.aggregated_signal.to_dict() if self.aggregated_signal else None,
+            "aggregated_signal": self.aggregated_signal.to_dict()
+            if self.aggregated_signal
+            else None,
             "risk_assessment": self.risk_assessment.to_dict() if self.risk_assessment else None,
             "strategy_signal": self.strategy_signal,
             "proceed_to_proposal": self.proceed_to_proposal,
@@ -127,28 +130,22 @@ class AnalysisOrchestrator:
                 self._run_pipeline(symbol, result),
                 timeout=settings.agent_timeout_seconds,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             result.error = f"Analysis timed out after {settings.agent_timeout_seconds}s"
             logger.error("analysis_timeout", symbol=symbol)
-            try:
+            with contextlib.suppress(Exception):
                 AGENT_WORKFLOW_FAILURES.labels(symbol=symbol, reason="timeout").inc()
-            except Exception:
-                pass
         except Exception as e:
             result.error = str(e)
             logger.error("analysis_failed", symbol=symbol, error=str(e))
-            try:
+            with contextlib.suppress(Exception):
                 AGENT_WORKFLOW_FAILURES.labels(symbol=symbol, reason="error").inc()
-            except Exception:
-                pass
 
         result.completed_at = datetime.now(UTC)
         latency_s = (result.completed_at - result.started_at).total_seconds()
 
-        try:
+        with contextlib.suppress(Exception):
             AGENT_WORKFLOW_DURATION.labels(symbol=symbol).observe(latency_s)
-        except Exception:
-            pass
 
         logger.info(
             "analysis_complete",
@@ -173,18 +170,32 @@ class AnalysisOrchestrator:
 
         # ── Step 2: Rule-based strategy signal ─────────────────────
         logger.info("analysis_step_strategy", symbol=symbol)
-        features_1h = {k.removeprefix("tf1h_"): v for k, v in features.items() if k.startswith("tf1h_")}
-        features_4h = {k.removeprefix("tf4h_"): v for k, v in features.items() if k.startswith("tf4h_")}
-        strategy_result = strategy_registry.evaluate("ema_pullback", features, features_1h, features_4h)
+        features_1h = {
+            k.removeprefix("tf1h_"): v for k, v in features.items() if k.startswith("tf1h_")
+        }
+        features_4h = {
+            k.removeprefix("tf4h_"): v for k, v in features.items() if k.startswith("tf4h_")
+        }
+        strategy_result = strategy_registry.evaluate(
+            "ema_pullback", features, features_1h, features_4h
+        )
 
         result.strategy_signal = {
             "signal": strategy_result.signal,
             "score": strategy_result.score,
             "confidence": strategy_result.confidence,
-            "entry_zone_low": str(strategy_result.entry_zone_low) if strategy_result.entry_zone_low else None,
-            "entry_zone_high": str(strategy_result.entry_zone_high) if strategy_result.entry_zone_high else None,
-            "stop_loss_hint": str(strategy_result.stop_loss_hint) if strategy_result.stop_loss_hint else None,
-            "take_profit_hint": str(strategy_result.take_profit_hint) if strategy_result.take_profit_hint else None,
+            "entry_zone_low": str(strategy_result.entry_zone_low)
+            if strategy_result.entry_zone_low
+            else None,
+            "entry_zone_high": str(strategy_result.entry_zone_high)
+            if strategy_result.entry_zone_high
+            else None,
+            "stop_loss_hint": str(strategy_result.stop_loss_hint)
+            if strategy_result.stop_loss_hint
+            else None,
+            "take_profit_hint": str(strategy_result.take_profit_hint)
+            if strategy_result.take_profit_hint
+            else None,
             "reasons": strategy_result.reasons,
         }
 
@@ -195,16 +206,18 @@ class AnalysisOrchestrator:
 
         risk_context = {
             "symbol": symbol,
-            "direction": strategy_result.signal if strategy_result.signal != "NO_SIGNAL" else "LONG",
+            "direction": strategy_result.signal
+            if strategy_result.signal != "NO_SIGNAL"
+            else "LONG",
             "entry_price": float(close) if close else 50000,
             "atr": float(atr) if atr else 0,
             "atr_pct": float(features.get("atr_pct", 1.5) or 1.5),
-            "account_balance": 10000,    # TODO: load from account service
+            "account_balance": 10000,  # TODO: load from account service
             "risk_pct": settings.risk_per_trade_percent / 100,
             "signal_score": strategy_result.score,
             "spread_bps": float(features.get("ob_spread_bps", 5) or 5),
             "volume_relative": float(features.get("volume_relative", 1.0) or 1.0),
-            "daily_loss_pct": 0,         # TODO: load from daily tracker
+            "daily_loss_pct": 0,  # TODO: load from daily tracker
             "total_exposure_pct": 0,
             "open_positions_count": 0,
             "market_data_stale": False,
@@ -238,7 +251,9 @@ class AnalysisOrchestrator:
         flow_task = asyncio.create_task(self._flow_agent.run(agent_context))
 
         regime_out, tech_out, flow_out = await asyncio.gather(
-            regime_task, tech_task, flow_task,
+            regime_task,
+            tech_task,
+            flow_task,
             return_exceptions=True,
         )
 
@@ -257,7 +272,9 @@ class AnalysisOrchestrator:
         # ── Step 5: Risk Analysis Agent (needs above outputs) ───────
         risk_agent_context = {
             **agent_context,
-            "regime": regime_out.regime if isinstance(regime_out, MarketRegimeOutput) else "UNKNOWN",
+            "regime": regime_out.regime
+            if isinstance(regime_out, MarketRegimeOutput)
+            else "UNKNOWN",
         }
 
         try:
@@ -271,9 +288,13 @@ class AnalysisOrchestrator:
         logger.info("analysis_step_aggregation", symbol=symbol)
 
         agg = self._aggregator.aggregate(
-            regime_output=regime_out.model_dump() if isinstance(regime_out, MarketRegimeOutput) else {},
+            regime_output=regime_out.model_dump()
+            if isinstance(regime_out, MarketRegimeOutput)
+            else {},
             technical_output=tech_out.model_dump() if isinstance(tech_out, TechnicalOutput) else {},
-            order_flow_output=flow_out.model_dump() if isinstance(flow_out, OrderFlowOutput) else {},
+            order_flow_output=flow_out.model_dump()
+            if isinstance(flow_out, OrderFlowOutput)
+            else {},
             risk_output=risk_out.model_dump() if isinstance(risk_out, RiskAnalysisOutput) else {},
             strategy_signal=result.strategy_signal,
         )
@@ -284,10 +305,18 @@ class AnalysisOrchestrator:
 
         critic_context = {
             **agent_context,
-            "market_regime_output": regime_out.model_dump() if isinstance(regime_out, MarketRegimeOutput) else {},
-            "technical_output": tech_out.model_dump() if isinstance(tech_out, TechnicalOutput) else {},
-            "order_flow_output": flow_out.model_dump() if isinstance(flow_out, OrderFlowOutput) else {},
-            "risk_analysis_output": risk_out.model_dump() if isinstance(risk_out, RiskAnalysisOutput) else {},
+            "market_regime_output": regime_out.model_dump()
+            if isinstance(regime_out, MarketRegimeOutput)
+            else {},
+            "technical_output": tech_out.model_dump()
+            if isinstance(tech_out, TechnicalOutput)
+            else {},
+            "order_flow_output": flow_out.model_dump()
+            if isinstance(flow_out, OrderFlowOutput)
+            else {},
+            "risk_analysis_output": risk_out.model_dump()
+            if isinstance(risk_out, RiskAnalysisOutput)
+            else {},
         }
 
         try:

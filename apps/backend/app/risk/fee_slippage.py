@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-BINANCE_MAKER_FEE = Decimal("0.001")    # 0.1%
-BINANCE_TAKER_FEE = Decimal("0.001")    # 0.1% (standard tier)
+BINANCE_MAKER_FEE = Decimal("0.001")  # 0.1%
+BINANCE_TAKER_FEE = Decimal("0.001")  # 0.1% (standard tier)
 
 
 class FeeSlippageEstimator:

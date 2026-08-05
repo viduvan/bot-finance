@@ -8,7 +8,7 @@ from sqlalchemy import BigInteger, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin
 
 
 class TechnicalFeature(Base, TimestampMixin):

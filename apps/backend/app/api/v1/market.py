@@ -6,10 +6,10 @@ chất lượng dữ liệu và thông tin sàn.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import structlog
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 
 from app.dependencies import CurrentUser, DBSession
 from app.market_data.binance_rest import binance_client
@@ -17,10 +17,8 @@ from app.market_data.service import MarketDataService
 from app.schemas.market import (
     CandleListResponse,
     CandleResponse,
-    DataQualityReport,
-    MarketSnapshotResponse,
-    OrderBookResponse,
     OrderBookLevel,
+    OrderBookResponse,
     SymbolInfo,
     TickerResponse,
 )
@@ -249,7 +247,9 @@ async def get_latest_snapshot(
         logger.error("snapshot_fetch_failed", symbol=symbol, error=str(e))
         return {"message": f"Không thể lấy snapshot: {e}"}
     if not snapshot:
-        return {"message": f"Không có ảnh chụp nhanh cho {symbol}. Hãy kích hoạt /snapshot/{symbol}/refresh trước."}
+        return {
+            "message": f"Không có ảnh chụp nhanh cho {symbol}. Hãy kích hoạt /snapshot/{symbol}/refresh trước."
+        }
     # Trả về an toàn dưới dạng dict (tránh crash khi thiếu field)
     return {
         "id": snapshot.get("id", ""),

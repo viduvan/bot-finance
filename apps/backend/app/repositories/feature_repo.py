@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 import structlog
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.feature import TechnicalFeature
@@ -78,6 +77,7 @@ class FeatureRepository:
     async def delete_old(self, symbol: str, before: datetime) -> int:
         """Remove old feature records to keep table size manageable."""
         from sqlalchemy import delete
+
         result = await self.db.execute(
             delete(TechnicalFeature).where(
                 TechnicalFeature.symbol == symbol,

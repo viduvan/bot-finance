@@ -27,8 +27,8 @@ def _run_async(coro):
 
 async def _analyze_symbol(symbol: str) -> dict:
     """Run full analysis pipeline for one symbol and persist results."""
-    from app.database.session import async_session_factory
     from app.agents.orchestrator import AnalysisOrchestrator
+    from app.database.session import async_session_factory
     from app.repositories.agent_repo import AgentWorkflowRepository
 
     async with async_session_factory() as db:
@@ -41,7 +41,13 @@ async def _analyze_symbol(symbol: str) -> dict:
             result_dict = result.to_dict()
 
             # Save individual agent run records
-            for agent_name in ["market_regime", "technical", "order_flow", "risk_analysis", "critic"]:
+            for agent_name in [
+                "market_regime",
+                "technical",
+                "order_flow",
+                "risk_analysis",
+                "critic",
+            ]:
                 agent_out = result_dict.get(agent_name)
                 if agent_out and isinstance(agent_out, dict):
                     await repo.save_agent_run(
@@ -86,6 +92,7 @@ async def _analyze_symbol(symbol: str) -> dict:
 async def _notify_proposal_ready(symbol: str, result: dict) -> None:
     """Send Telegram notification when analysis recommends a proposal."""
     from app.config import settings
+
     if not settings.telegram_enabled:
         return
 
@@ -105,13 +112,17 @@ async def _notify_proposal_ready(symbol: str, result: dict) -> None:
 
     try:
         import httpx
+
         url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
         async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(url, json={
-                "chat_id": settings.telegram_chat_id,
-                "text": message,
-                "parse_mode": "Markdown",
-            })
+            await client.post(
+                url,
+                json={
+                    "chat_id": settings.telegram_chat_id,
+                    "text": message,
+                    "parse_mode": "Markdown",
+                },
+            )
         logger.info("telegram_notification_sent", symbol=symbol)
     except Exception as e:
         logger.warning("telegram_notification_failed", error=str(e))
@@ -126,6 +137,7 @@ async def _notify_proposal_ready(symbol: str, result: dict) -> None:
 def run_scheduled_analysis(self) -> dict:
     """Run analysis for all configured trading symbols every 15 minutes."""
     from app.config import settings
+
     symbols = settings.trading_symbols
     logger.info("scheduled_analysis_start", symbols=symbols)
 

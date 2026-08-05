@@ -18,9 +18,9 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.agents.llm_client import llm_client
 from app.config import settings
 from app.dependencies import get_current_user
-from app.agents.llm_client import llm_client
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -46,6 +46,7 @@ async def tool_get_ticker(symbol: str = "BTCUSDT") -> dict[str, Any]:
     """Fetch real-time ticker data for a symbol."""
     try:
         from app.market_data.binance_rest import binance_client
+
         ticker = await binance_client.get_ticker_24h(symbol)
         return {
             "symbol": str(ticker.get("symbol", symbol)),
@@ -106,7 +107,9 @@ async def tool_get_proposals() -> dict[str, Any]:
                         "id": str(p.id),
                         "symbol": p.symbol,
                         "direction": p.direction,
-                        "confidence": str(getattr(p, "confidence", getattr(p, "consensus_score", "0"))),
+                        "confidence": str(
+                            getattr(p, "confidence", getattr(p, "consensus_score", "0"))
+                        ),
                         "status": p.status,
                         "created_at": str(p.created_at) if p.created_at else "",
                     }
@@ -142,6 +145,7 @@ async def tool_get_technical_indicators(symbol: str = "BTCUSDT") -> dict[str, An
     """Fetch computed technical indicators."""
     try:
         from app.features.indicator_engine import compute_indicators
+
         indicators = await compute_indicators(symbol)
         if isinstance(indicators, dict):
             # Return a summary of key indicators
@@ -170,8 +174,16 @@ TOOL_PATTERNS: list[tuple[str, str, Any]] = [
     (r"(?i)(price|giá|ticker|quote|bao nhiêu)", "get_ticker", tool_get_ticker),
     (r"(?i)(position|vị thế|holding|đang giữ)", "get_positions", tool_get_positions),
     (r"(?i)(proposal|đề xuất|recommend|khuyến nghị|signal)", "get_proposals", tool_get_proposals),
-    (r"(?i)(pnl|profit|loss|lãi|lỗ|performance|hiệu suất)", "get_pnl_summary", tool_get_pnl_summary),
-    (r"(?i)(indicator|chỉ số|rsi|macd|bollinger|sma|ema|technical|kỹ thuật)", "get_technical_indicators", tool_get_technical_indicators),
+    (
+        r"(?i)(pnl|profit|loss|lãi|lỗ|performance|hiệu suất)",
+        "get_pnl_summary",
+        tool_get_pnl_summary,
+    ),
+    (
+        r"(?i)(indicator|chỉ số|rsi|macd|bollinger|sma|ema|technical|kỹ thuật)",
+        "get_technical_indicators",
+        tool_get_technical_indicators,
+    ),
 ]
 
 
@@ -186,10 +198,14 @@ def _extract_symbol(message: str) -> str:
 
     # Check for common names
     name_map = {
-        "BITCOIN": "BTCUSDT", "BTC": "BTCUSDT",
-        "ETHEREUM": "ETHUSDT", "ETH": "ETHUSDT",
-        "SOLANA": "SOLUSDT", "SOL": "SOLUSDT",
-        "BNB": "BNBUSDT", "BINANCE COIN": "BNBUSDT",
+        "BITCOIN": "BTCUSDT",
+        "BTC": "BTCUSDT",
+        "ETHEREUM": "ETHUSDT",
+        "ETH": "ETHUSDT",
+        "SOLANA": "SOLUSDT",
+        "SOL": "SOLUSDT",
+        "BNB": "BNBUSDT",
+        "BINANCE COIN": "BNBUSDT",
     }
     for name, sym in name_map.items():
         if name in msg_upper:
@@ -214,11 +230,13 @@ async def _detect_and_call_tools(message: str) -> tuple[list[dict[str, Any]], di
                     result = await tool_func()
                     args = {}
 
-                tool_calls.append({
-                    "name": tool_name,
-                    "args": args,
-                    "result": result,
-                })
+                tool_calls.append(
+                    {
+                        "name": tool_name,
+                        "args": args,
+                        "result": result,
+                    }
+                )
                 tools_context[tool_name] = result
             except Exception as e:
                 logger.warning("tool_call_error", tool=tool_name, error=str(e))
@@ -229,11 +247,13 @@ async def _detect_and_call_tools(message: str) -> tuple[list[dict[str, Any]], di
         try:
             ticker_data = await tool_get_ticker(symbol)
             tools_context["get_ticker"] = ticker_data
-            tool_calls.append({
-                "name": "get_ticker",
-                "args": {"symbol": symbol},
-                "result": ticker_data,
-            })
+            tool_calls.append(
+                {
+                    "name": "get_ticker",
+                    "args": {"symbol": symbol},
+                    "result": ticker_data,
+                }
+            )
         except Exception:
             pass
 
@@ -278,7 +298,9 @@ async def chat(
                 else:
                     context_lines.append(f"  {tool_data}")
             context_lines.append("\n--- END DATA ---")
-            context_lines.append("\nUse the above live data to answer the user's question accurately.")
+            context_lines.append(
+                "\nUse the above live data to answer the user's question accurately."
+            )
             enriched_prompt = "\n".join(context_lines)
 
         system_prompt = (
@@ -311,7 +333,9 @@ async def chat(
 @router.get("/status")
 async def ai_status() -> dict[str, Any]:
     """Check LLM service status and configuration."""
-    primary_provider = settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    primary_provider = (
+        settings.llm_fallback_chain_list[0] if settings.llm_fallback_chain_list else "ollama"
+    )
     return {
         "status": "connected",
         "provider": primary_provider,

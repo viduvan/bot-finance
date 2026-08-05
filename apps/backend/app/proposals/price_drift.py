@@ -23,9 +23,9 @@ class PriceDriftGuard:
     """Detects significant price movement between approval and execution."""
 
     def __init__(self, max_drift_bps: float | None = None) -> None:
-        self.max_drift_bps = Decimal(str(
-            max_drift_bps if max_drift_bps is not None else settings.max_price_drift_bps
-        ))
+        self.max_drift_bps = Decimal(
+            str(max_drift_bps if max_drift_bps is not None else settings.max_price_drift_bps)
+        )
 
     def check(
         self,

@@ -68,7 +68,9 @@ class OrderBookFeatures:
         # > 0 = more bids (buy pressure), < 0 = more asks (sell pressure)
         total_qty = total_bid_qty + total_ask_qty
         if total_qty > 0:
-            imbalance = ((total_bid_qty - total_ask_qty) / total_qty * 100).quantize(Decimal("0.01"))
+            imbalance = ((total_bid_qty - total_ask_qty) / total_qty * 100).quantize(
+                Decimal("0.01")
+            )
             result["order_imbalance_pct"] = str(imbalance)
 
             # Classify pressure

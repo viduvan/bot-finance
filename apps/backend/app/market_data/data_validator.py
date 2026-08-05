@@ -91,11 +91,13 @@ class DataValidator:
 
             if actual_diff > expected_diff * 1.5:
                 missing_count = int(actual_diff.total_seconds() / interval_seconds) - 1
-                gaps.append({
-                    "start": prev_time.isoformat(),
-                    "end": curr_time.isoformat(),
-                    "missing_candles": missing_count,
-                })
+                gaps.append(
+                    {
+                        "start": prev_time.isoformat(),
+                        "end": curr_time.isoformat(),
+                        "missing_candles": missing_count,
+                    }
+                )
 
         # Kiểm tra các bất thường về giá (price anomalies)
         for c in sorted_candles:
@@ -103,28 +105,34 @@ class DataValidator:
 
             # Tính toàn vẹn của OHLC: high >= max(open, close), low <= min(open, close)
             if h < o or h < cl:
-                anomalies.append({
-                    "time": c["open_time"].isoformat(),
-                    "type": "high_below_open_or_close",
-                    "values": {"open": str(o), "high": str(h), "close": str(cl)},
-                })
+                anomalies.append(
+                    {
+                        "time": c["open_time"].isoformat(),
+                        "type": "high_below_open_or_close",
+                        "values": {"open": str(o), "high": str(h), "close": str(cl)},
+                    }
+                )
 
             if l > o or l > cl:
-                anomalies.append({
-                    "time": c["open_time"].isoformat(),
-                    "type": "low_above_open_or_close",
-                    "values": {"open": str(o), "low": str(l), "close": str(cl)},
-                })
+                anomalies.append(
+                    {
+                        "time": c["open_time"].isoformat(),
+                        "type": "low_above_open_or_close",
+                        "values": {"open": str(o), "low": str(l), "close": str(cl)},
+                    }
+                )
 
             # Thay đổi giá cực đoan
             if o > 0:
                 change_pct = abs((cl - o) / o * 100)
                 if change_pct > MAX_CANDLE_PRICE_CHANGE_PCT:
-                    anomalies.append({
-                        "time": c["open_time"].isoformat(),
-                        "type": "extreme_price_change",
-                        "change_pct": str(change_pct),
-                    })
+                    anomalies.append(
+                        {
+                            "time": c["open_time"].isoformat(),
+                            "type": "extreme_price_change",
+                            "change_pct": str(change_pct),
+                        }
+                    )
 
             # Khối lượng bằng 0 (chưa chắc là lỗi nhưng đáng ngờ)
             if c["volume"] == 0:

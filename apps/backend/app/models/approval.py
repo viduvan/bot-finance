@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, INET_TYPE, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import INET_TYPE, JSON_TYPE, Base, UUIDPrimaryKeyMixin
 
 
 class ApprovalToken(Base, UUIDPrimaryKeyMixin):
@@ -29,18 +29,14 @@ class ApprovalToken(Base, UUIDPrimaryKeyMixin):
     proposal_id: Mapped[str] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trade_proposals.id"), nullable=False, index=True
     )
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     token_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     approved_payload_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    invalidated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     invalidation_reason: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
 
@@ -52,9 +48,7 @@ class ProposalApproval(Base, UUIDPrimaryKeyMixin):
     proposal_id: Mapped[str] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trade_proposals.id"), nullable=False, index=True
     )
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     decision: Mapped[str] = mapped_column(String(20), nullable=False)
     token_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("approval_tokens.id"), nullable=True

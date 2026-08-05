@@ -16,7 +16,6 @@ from decimal import Decimal
 
 import pytest
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # PositionSizer
 # ─────────────────────────────────────────────────────────────────────────────
@@ -34,6 +33,7 @@ class TestPositionSizer:
     @pytest.fixture
     def sizer(self):
         from app.risk.position_sizer import PositionSizer
+
         return PositionSizer()
 
     def test_basic_long_position_size(self, sizer):
@@ -46,7 +46,7 @@ class TestPositionSizer:
         # Simpler: risk_amount=$100, SL_dist=$100 → qty=1.0, notional=$50,000; cap=20%×$300,000=$60,000 ✓
         result = sizer.calculate(
             account_balance=Decimal("300000"),
-            risk_pct=Decimal("0.01"),      # $3,000 risk... too big. Use 0.001 instead.
+            risk_pct=Decimal("0.01"),  # $3,000 risk... too big. Use 0.001 instead.
             entry_price=Decimal("50000"),
             stop_loss=Decimal("49900"),
             direction="LONG",
@@ -57,25 +57,29 @@ class TestPositionSizer:
         # The cap IS correct behavior. Fix tests to reflect reality.
         # qty capped to $2,000/$50,000 = 0.04 BTC. Test this:
         assert result["was_capped"] is True  # Capping is expected and correct
-        assert result["quantity"] > 0        # Some position is taken
+        assert result["quantity"] > 0  # Some position is taken
 
     def test_basic_short_position_size(self, sizer):
         """Standard SHORT position with sensible notional."""
         # Use $100 entry (e.g. SOL) — notional at 1 unit = $100, well within 20% cap of $2,000
         result = sizer.calculate(
             account_balance=Decimal("10000"),
-            risk_pct=Decimal("0.01"),    # $100 risk
+            risk_pct=Decimal("0.01"),  # $100 risk
             entry_price=Decimal("100"),
-            stop_loss=Decimal("101"),    # $1 SL dist → qty = $100/$1 = 100 units, notional=$10,000 > cap $2,000
+            stop_loss=Decimal(
+                "101"
+            ),  # $1 SL dist → qty = $100/$1 = 100 units, notional=$10,000 > cap $2,000
             direction="SHORT",
         )
         # Still caps. Risk/SL: entry=$100, SL=$101 ($1 dist), risk=$100 → qty=100 units, $10,000 notional > $2,000 cap
         # Test the formula logic without cap: use $5 entry, $0.50 SL → notional=$5×1=$5 < cap $2,000
         result = sizer.calculate(
             account_balance=Decimal("10000"),
-            risk_pct=Decimal("0.001"),   # $10 risk
+            risk_pct=Decimal("0.001"),  # $10 risk
             entry_price=Decimal("100"),
-            stop_loss=Decimal("110"),    # $10 SL → qty = $10/$10 = 1.0 unit, notional = $100 < $2,000 ✓
+            stop_loss=Decimal(
+                "110"
+            ),  # $10 SL → qty = $10/$10 = 1.0 unit, notional = $100 < $2,000 ✓
             direction="SHORT",
         )
         assert result["quantity"] == Decimal("1.0")
@@ -87,9 +91,9 @@ class TestPositionSizer:
         # notional = 0.1 × $100 = $10 < 20% × $1,000 = $200 cap ✓
         result = sizer.calculate(
             account_balance=Decimal("1000"),
-            risk_pct=Decimal("0.001"),   # $1 risk
+            risk_pct=Decimal("0.001"),  # $1 risk
             entry_price=Decimal("100"),
-            stop_loss=Decimal("90"),     # $10 SL dist → qty = $1/$10 = 0.1 units
+            stop_loss=Decimal("90"),  # $10 SL dist → qty = $1/$10 = 0.1 units
             direction="LONG",
         )
         assert result["quantity"] == Decimal("0.10000000")
@@ -167,7 +171,7 @@ class TestPositionSizer:
         # Large risk could create huge position. Expect capping.
         result = sizer.calculate(
             account_balance=Decimal("10000"),
-            risk_pct=Decimal("0.05"),   # 5% risk
+            risk_pct=Decimal("0.05"),  # 5% risk
             entry_price=Decimal("50000"),
             stop_loss=Decimal("49950"),  # Only $50 SL → 10 BTC = $500k notional (50× balance)
             direction="LONG",
@@ -192,6 +196,7 @@ class TestRiskGate:
     @pytest.fixture
     def gate(self):
         from app.risk.risk_gate import RiskGate
+
         return RiskGate()
 
     def make_context(self, **overrides) -> dict:
@@ -199,21 +204,21 @@ class TestRiskGate:
         base = {
             # Account
             "account_balance": Decimal("10000"),
-            "daily_loss_pct": Decimal("0.5"),       # 0.5% daily loss (below 3% limit)
-            "total_exposure_pct": Decimal("10"),     # 10% exposure (below 50% limit)
-            "open_positions_count": 1,               # 1 open position (below max 3)
+            "daily_loss_pct": Decimal("0.5"),  # 0.5% daily loss (below 3% limit)
+            "total_exposure_pct": Decimal("10"),  # 10% exposure (below 50% limit)
+            "open_positions_count": 1,  # 1 open position (below max 3)
             # Trade specifics
-            "signal_score": 75,                      # Above min threshold 60
-            "risk_reward_ratio": Decimal("2.5"),     # Above min 1.5
-            "spread_bps": Decimal("5"),              # Below max 50 bps
-            "atr_pct": Decimal("1.0"),               # Normal volatility
-            "volume_relative": Decimal("1.2"),       # Near-average volume
+            "signal_score": 75,  # Above min threshold 60
+            "risk_reward_ratio": Decimal("2.5"),  # Above min 1.5
+            "spread_bps": Decimal("5"),  # Below max 50 bps
+            "atr_pct": Decimal("1.0"),  # Normal volatility
+            "volume_relative": Decimal("1.2"),  # Near-average volume
             "direction": "LONG",
             "symbol": "BTCUSDT",
             # Market conditions
             "market_data_stale": False,
             "exchange_connected": True,
-            "trading_mode": "PAPER",                 # Paper mode — always allow
+            "trading_mode": "PAPER",  # Paper mode — always allow
             "max_position_notional": Decimal("2000"),
             "min_risk_reward_ratio": Decimal("1.5"),
             "max_spread_bps": Decimal("50"),
@@ -254,7 +259,9 @@ class TestRiskGate:
 
     def test_poor_risk_reward_blocks(self, gate):
         """R/R ratio below minimum blocks the trade."""
-        ctx = self.make_context(risk_reward_ratio=Decimal("1.0"), min_risk_reward_ratio=Decimal("1.5"))
+        ctx = self.make_context(
+            risk_reward_ratio=Decimal("1.0"), min_risk_reward_ratio=Decimal("1.5")
+        )
         result = gate.check(ctx)
         assert result["allowed"] is False
         assert any("risk" in r.lower() or "reward" in r.lower() for r in result["blocked_reasons"])
@@ -278,11 +285,15 @@ class TestRiskGate:
         ctx = self.make_context(exchange_connected=False)
         result = gate.check(ctx)
         assert result["allowed"] is False
-        assert any("connect" in r.lower() or "exchange" in r.lower() for r in result["blocked_reasons"])
+        assert any(
+            "connect" in r.lower() or "exchange" in r.lower() for r in result["blocked_reasons"]
+        )
 
     def test_excessive_total_exposure_blocks(self, gate):
         """Total portfolio exposure above max blocks the trade."""
-        ctx = self.make_context(total_exposure_pct=Decimal("60"), max_total_exposure_pct=Decimal("50"))
+        ctx = self.make_context(
+            total_exposure_pct=Decimal("60"), max_total_exposure_pct=Decimal("50")
+        )
         result = gate.check(ctx)
         assert result["allowed"] is False
         assert any("exposure" in r.lower() for r in result["blocked_reasons"])
@@ -322,14 +333,18 @@ class TestRiskGate:
         """LIVE trading mode applies stricter constraints."""
         ctx = self.make_context(
             trading_mode="LIVE",
-            signal_score=62,        # Passes PAPER (min 60) but might fail LIVE (min 70)
+            signal_score=62,  # Passes PAPER (min 60) but might fail LIVE (min 70)
             min_signal_score=60,
         )
         result_live = gate.check(ctx)
         # With LIVE mode, min score should be 70, so 62 should fail
         # (The gate applies a higher threshold for live trading)
         # This just tests that the gate considers trading_mode
-        assert "trading_mode" in str(result_live) or result_live.get("mode") == "LIVE" or isinstance(result_live["allowed"], bool)
+        assert (
+            "trading_mode" in str(result_live)
+            or result_live.get("mode") == "LIVE"
+            or isinstance(result_live["allowed"], bool)
+        )
 
     def test_zero_balance_blocks(self, gate):
         """Zero or negative account balance blocks all trades."""
@@ -349,6 +364,7 @@ class TestSLTPCalculator:
     @pytest.fixture
     def calc(self):
         from app.risk.sltp_calculator import SLTPCalculator
+
         return SLTPCalculator()
 
     def test_atr_based_stop_loss_long(self, calc):
@@ -479,6 +495,7 @@ class TestFeeSlippageEstimator:
     @pytest.fixture
     def estimator(self):
         from app.risk.fee_slippage import FeeSlippageEstimator
+
         return FeeSlippageEstimator()
 
     def test_binance_maker_fee(self, estimator):
@@ -555,14 +572,15 @@ class TestRiskRewardCalculator:
     @pytest.fixture
     def rr_calc(self):
         from app.risk.risk_reward import RiskRewardCalculator
+
         return RiskRewardCalculator()
 
     def test_2_to_1_long(self, rr_calc):
         """Classic 2:1 R/R for LONG."""
         rr = rr_calc.calculate(
             entry=Decimal("50000"),
-            stop_loss=Decimal("49500"),   # Risk = 500
-            take_profit=Decimal("51000"), # Reward = 1000
+            stop_loss=Decimal("49500"),  # Risk = 500
+            take_profit=Decimal("51000"),  # Reward = 1000
         )
         assert rr == Decimal("2.0")
 
@@ -570,8 +588,8 @@ class TestRiskRewardCalculator:
         """3:1 R/R for SHORT."""
         rr = rr_calc.calculate(
             entry=Decimal("50000"),
-            stop_loss=Decimal("50300"),   # Risk = 300
-            take_profit=Decimal("49100"), # Reward = 900
+            stop_loss=Decimal("50300"),  # Risk = 300
+            take_profit=Decimal("49100"),  # Reward = 900
         )
         assert rr == Decimal("3.0")
 
@@ -579,8 +597,8 @@ class TestRiskRewardCalculator:
         """Poor trade setup with R/R < 1 still returns a value."""
         rr = rr_calc.calculate(
             entry=Decimal("50000"),
-            stop_loss=Decimal("49000"),   # Risk = 1000
-            take_profit=Decimal("50500"), # Reward = 500 → 0.5:1
+            stop_loss=Decimal("49000"),  # Risk = 1000
+            take_profit=Decimal("50500"),  # Reward = 500 → 0.5:1
         )
         assert rr == Decimal("0.5")
 
@@ -618,6 +636,7 @@ class TestDailyLossTracker:
     @pytest.fixture
     def tracker(self):
         from app.risk.daily_tracker import DailyLossTracker
+
         return DailyLossTracker(use_redis=False)  # In-memory mode for unit tests
 
     def test_initial_loss_zero(self, tracker):
@@ -680,15 +699,16 @@ class TestExchangeFilter:
     @pytest.fixture
     def ef(self):
         from app.risk.exchange_filter import ExchangeFilter
+
         return ExchangeFilter()
 
     def make_filters(self, **overrides) -> dict:
         base = {
-            "step_size": Decimal("0.001"),    # BTC: min 0.001 BTC per step
+            "step_size": Decimal("0.001"),  # BTC: min 0.001 BTC per step
             "min_qty": Decimal("0.001"),
             "max_qty": Decimal("9000"),
-            "tick_size": Decimal("0.01"),     # Price tick = $0.01
-            "min_notional": Decimal("10"),    # Min $10 order
+            "tick_size": Decimal("0.01"),  # Price tick = $0.01
+            "min_notional": Decimal("10"),  # Min $10 order
         }
         base.update(overrides)
         return base

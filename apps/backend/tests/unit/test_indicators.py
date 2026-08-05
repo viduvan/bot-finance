@@ -19,10 +19,8 @@ import pytest
 from app.features.indicators import IndicatorEngine
 from app.features.market_structure import MarketStructure
 from app.features.orderbook_features import OrderBookFeatures
-from app.features.volatility import VolatilityFeatures
 from app.features.volume import VolumeFeatures
-from app.strategies.ema_pullback import EMAPullbackStrategy, MIN_SIGNAL_SCORE
-
+from app.strategies.ema_pullback import MIN_SIGNAL_SCORE, EMAPullbackStrategy
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 
@@ -143,7 +141,7 @@ class TestIndicatorEngine:
 
     def test_macd_uptrend_positive_histogram(self, engine, trending_candles):
         """In a strong uptrend, MACD histogram should be non-negative.
-        
+
         A perfectly linear synthetic uptrend may produce a histogram close to 0
         since MACD and signal converge. In real market data with acceleration,
         the histogram will be clearly positive.
@@ -292,8 +290,14 @@ class TestOrderBookFeatures:
 
     def make_book(self, bid_qty: float = 1.0, ask_qty: float = 1.0, levels: int = 5) -> dict:
         """Create a synthetic order book."""
-        bids = [{"price": Decimal(str(50000 - i * 10)), "quantity": Decimal(str(bid_qty))} for i in range(levels)]
-        asks = [{"price": Decimal(str(50001 + i * 10)), "quantity": Decimal(str(ask_qty))} for i in range(levels)]
+        bids = [
+            {"price": Decimal(str(50000 - i * 10)), "quantity": Decimal(str(bid_qty))}
+            for i in range(levels)
+        ]
+        asks = [
+            {"price": Decimal(str(50001 + i * 10)), "quantity": Decimal(str(ask_qty))}
+            for i in range(levels)
+        ]
         return {"bids": bids, "asks": asks}
 
     def test_spread_computed(self, obf):
@@ -362,7 +366,7 @@ class TestEMAPullbackStrategy:
             "macd_histogram": "100",
             "macd_signal_type": "BULLISH",
             "atr_14": "300",
-            "close": "50250",   # Within 1×ATR of EMA21 (50200), diff=50 < 300
+            "close": "50250",  # Within 1×ATR of EMA21 (50200), diff=50 < 300
             "last_price": "50250",
             "price_above_vwap": True,
             "pressure_bias": "BULLISH",
@@ -453,7 +457,7 @@ class TestEMAPullbackStrategy:
     def test_contradicting_trend_lowers_score(self, strategy):
         """EMA21 < EMA50 in a supposed long setup should lower score."""
         f15 = self.make_bullish_features()
-        f15["ema_21"] = "49500"   # EMA21 now BELOW EMA50 (49800)
+        f15["ema_21"] = "49500"  # EMA21 now BELOW EMA50 (49800)
         f1h = self.make_1h_bullish_features()
 
         result = strategy.evaluate(f15, f1h, {})

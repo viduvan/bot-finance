@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class MarketCandle(Base, TimestampMixin):

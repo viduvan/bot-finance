@@ -14,11 +14,12 @@ Timeout: enforced via asyncio.wait_for (from config).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import re
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 import structlog
 from pydantic import BaseModel, ValidationError
@@ -45,7 +46,7 @@ class AgentOutput(BaseModel):
     parse_retries: int = 0
 
 
-class BaseAgent(ABC, Generic[T]):
+class BaseAgent[T: BaseModel](ABC):
     """Abstract base class for all analysis agents.
 
     Subclasses must implement:
@@ -130,13 +131,11 @@ class BaseAgent(ABC, Generic[T]):
                 parsed.parse_retries = retries
 
                 latency_s = time.monotonic() - start
-                try:
+                with contextlib.suppress(Exception):
                     AGENT_RUN_DURATION.labels(
                         agent_name=self.name,
                         provider=llm_response.provider,
                     ).observe(latency_s)
-                except Exception:
-                    pass
 
                 logger.info(
                     "agent_run_complete",
@@ -162,8 +161,8 @@ class BaseAgent(ABC, Generic[T]):
                     prompt = self._build_retry_prompt(prompt, str(e))
                     continue
 
-            except asyncio.TimeoutError:
-                last_error = asyncio.TimeoutError(
+            except TimeoutError:
+                last_error = TimeoutError(
                     f"Agent {self.name} timed out after {settings.agent_timeout_seconds}s"
                 )
                 logger.error("agent_timeout", agent=self.name)

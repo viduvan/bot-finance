@@ -9,7 +9,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 import numpy as np
-import pandas as pd
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -81,7 +80,7 @@ class VolumeFeatures:
 
         # Volume Weighted Average Price (VWAP) — intraday approximation
         if n >= 2:
-            vwap = self._compute_vwap(candles[-min(n, 96):])  # Last 24h of 15m candles
+            vwap = self._compute_vwap(candles[-min(n, 96) :])  # Last 24h of 15m candles
             result["vwap"] = str(vwap) if vwap else None
 
             if vwap and current_close:
@@ -101,7 +100,9 @@ class VolumeFeatures:
         total_vol = Decimal("0")
 
         for c in candles:
-            typical = (Decimal(str(c["high"])) + Decimal(str(c["low"])) + Decimal(str(c["close"]))) / 3
+            typical = (
+                Decimal(str(c["high"])) + Decimal(str(c["low"])) + Decimal(str(c["close"]))
+            ) / 3
             vol = Decimal(str(c["volume"]))
             total_tv += typical * vol
             total_vol += vol
@@ -136,7 +137,9 @@ class VolumeFeatures:
         return {
             "buy_pressure_pct": str(buy_pct),
             "sell_pressure_pct": str(sell_pct),
-            "pressure_bias": "BULLISH" if buy_pct > 55 else ("BEARISH" if sell_pct > 55 else "NEUTRAL"),
+            "pressure_bias": "BULLISH"
+            if buy_pct > 55
+            else ("BEARISH" if sell_pct > 55 else "NEUTRAL"),
         }
 
 

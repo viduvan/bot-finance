@@ -13,10 +13,10 @@ import asyncio
 import json
 
 import structlog
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from app.core.security import decode_token
 from app.core.exceptions import AuthenticationError
+from app.core.security import decode_token
 from app.market_data.binance_ws import ws_manager
 
 logger = structlog.get_logger(__name__)
@@ -59,10 +59,12 @@ async def market_websocket(
 
     try:
         # Gửi xác nhận kết nối ban đầu
-        await ws.send_json({
-            "type": "connected",
-            "message": "Luồng dữ liệu thị trường đã kích hoạt",
-        })
+        await ws.send_json(
+            {
+                "type": "connected",
+                "message": "Luồng dữ liệu thị trường đã kích hoạt",
+            }
+        )
 
         # Giữ kết nối (Keepalive) bằng các ping định kỳ
         # Đồng thời lắng nghe các tin nhắn từ client (vd: subscribe/unsubscribe)
@@ -80,12 +82,14 @@ async def market_websocket(
                         await ws.send_json({"type": "pong"})
                     elif cmd == "subscribe":
                         # Tương lai: đăng ký theo từng cặp tiền (per-symbol)
-                        await ws.send_json({"type": "subscribed", "symbols": msg.get("symbols", [])})
+                        await ws.send_json(
+                            {"type": "subscribed", "symbols": msg.get("symbols", [])}
+                        )
 
                 except json.JSONDecodeError:
                     pass
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Gửi ping giữ kết nối
                 try:
                     await ws.send_json({"type": "ping"})

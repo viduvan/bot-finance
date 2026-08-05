@@ -11,10 +11,8 @@ Tests cover:
 from __future__ import annotations
 
 from decimal import Decimal
-from datetime import UTC, datetime
 
 import pytest
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PaperFillSimulator
@@ -27,6 +25,7 @@ class TestPaperFillSimulator:
     @pytest.fixture
     def sim(self):
         from app.execution.paper_fill import PaperFillSimulator
+
         return PaperFillSimulator()
 
     def test_market_order_fills_at_current_price(self, sim):
@@ -60,8 +59,8 @@ class TestPaperFillSimulator:
         """LIMIT BUY fills when current price <= limit price."""
         result = sim.simulate_fill(
             order_type="LIMIT",
-            order_price=Decimal("50100"),   # Limit price
-            current_price=Decimal("50000"), # Market below limit → fills
+            order_price=Decimal("50100"),  # Limit price
+            current_price=Decimal("50000"),  # Market below limit → fills
             quantity=Decimal("0.1"),
             side="BUY",
         )
@@ -72,8 +71,8 @@ class TestPaperFillSimulator:
         """LIMIT BUY does NOT fill when current price > limit price."""
         result = sim.simulate_fill(
             order_type="LIMIT",
-            order_price=Decimal("49000"),   # Limit price
-            current_price=Decimal("50000"), # Market above limit → no fill
+            order_price=Decimal("49000"),  # Limit price
+            current_price=Decimal("50000"),  # Market above limit → no fill
             quantity=Decimal("0.1"),
             side="BUY",
         )
@@ -85,7 +84,7 @@ class TestPaperFillSimulator:
         result = sim.simulate_fill(
             order_type="LIMIT",
             order_price=Decimal("50000"),
-            current_price=Decimal("50100"), # Market above limit → fills
+            current_price=Decimal("50100"),  # Market above limit → fills
             quantity=Decimal("0.1"),
             side="SELL",
         )
@@ -126,6 +125,7 @@ class TestPaperPositionManager:
     @pytest.fixture
     def pm(self):
         from app.execution.position_manager import PaperPositionManager
+
         return PaperPositionManager()
 
     def test_open_long_position(self, pm):
@@ -234,6 +234,7 @@ class TestPaperPnLTracker:
     @pytest.fixture
     def tracker(self):
         from app.execution.pnl_tracker import PaperPnLTracker
+
         return PaperPnLTracker()
 
     def test_initial_state_zero(self, tracker):
@@ -302,6 +303,7 @@ class TestExecutionService:
     @pytest.fixture
     def make_proposal(self):
         """Return a factory for mock APPROVED proposals."""
+
         def _factory(**overrides) -> dict:
             base = {
                 "id": "prop-001",
@@ -326,6 +328,7 @@ class TestExecutionService:
     def test_execute_returns_order_dict(self, make_proposal):
         """execute() should return a dict with order details."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         proposal = make_proposal()
         result = svc.execute(
@@ -339,6 +342,7 @@ class TestExecutionService:
     def test_execute_creates_position(self, make_proposal):
         """A successfully filled order should create an open position."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         proposal = make_proposal()
         result = svc.execute(
@@ -351,6 +355,7 @@ class TestExecutionService:
     def test_execute_buy_recommendation_opens_long(self, make_proposal):
         """BUY recommendation should open LONG position."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         proposal = make_proposal(recommendation="BUY")
         result = svc.execute(proposal=proposal, current_price=Decimal("50000"))
@@ -359,14 +364,18 @@ class TestExecutionService:
     def test_execute_sell_recommendation_opens_short(self, make_proposal):
         """SELL recommendation should open SHORT position."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
-        proposal = make_proposal(recommendation="SELL", suggested_price="50000", stop_loss_price="52000")
+        proposal = make_proposal(
+            recommendation="SELL", suggested_price="50000", stop_loss_price="52000"
+        )
         result = svc.execute(proposal=proposal, current_price=Decimal("50000"))
         assert result["position"]["side"] == "SHORT"
 
     def test_execute_paper_environment(self, make_proposal):
         """Paper execution should mark order as PAPER environment."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         proposal = make_proposal(environment="PAPER")
         result = svc.execute(proposal=proposal, current_price=Decimal("50000"))
@@ -375,6 +384,7 @@ class TestExecutionService:
     def test_execute_rejected_proposal_raises(self, make_proposal):
         """Executing a REJECTED proposal should raise ValueError."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         proposal = make_proposal(status="REJECTED")
         with pytest.raises(ValueError, match="APPROVED|status"):
@@ -383,6 +393,7 @@ class TestExecutionService:
     def test_execute_generates_client_order_id(self, make_proposal):
         """Each execution should generate a unique client_order_id."""
         from app.execution.service import PaperExecutionService
+
         svc = PaperExecutionService()
         p1 = make_proposal()
         p2 = make_proposal(id="prop-002")

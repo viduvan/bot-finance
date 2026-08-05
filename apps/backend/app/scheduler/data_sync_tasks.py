@@ -34,10 +34,11 @@ def sync_candles_task(self, symbol: str | None = None, timeframe: str = "15m") -
 
     Chạy mỗi 15 phút qua Celery Beat.
     """
+
     async def _sync():
         from app.database.session import async_session_factory
-        from app.market_data.service import MarketDataService
         from app.market_data.binance_rest import BinanceRestClient
+        from app.market_data.service import MarketDataService
 
         symbols = [symbol] if symbol else settings.trading_symbols
 
@@ -52,7 +53,10 @@ def sync_candles_task(self, symbol: str | None = None, timeframe: str = "15m") -
                 for sym in symbols:
                     try:
                         result = await service.fetch_and_store_candles(sym, timeframe, limit=50)
-                        results[sym] = {"count": result["count"], "healthy": result["quality"]["is_healthy"]}
+                        results[sym] = {
+                            "count": result["count"],
+                            "healthy": result["quality"]["is_healthy"],
+                        }
                     except Exception as e:
                         logger.error("candle_sync_failed", symbol=sym, error=str(e))
                         results[sym] = {"error": str(e)}
@@ -74,10 +78,11 @@ def refresh_snapshots_task(self) -> dict:
 
     Chạy mỗi 60 giây qua Celery Beat.
     """
+
     async def _refresh():
         from app.database.session import async_session_factory
-        from app.market_data.service import MarketDataService
         from app.market_data.binance_rest import BinanceRestClient
+        from app.market_data.service import MarketDataService
 
         results = {}
         # Create fresh client per task to avoid event loop contamination
@@ -113,6 +118,7 @@ def backfill_gaps_task(hours_back: int = 24) -> dict:
 
     Chạy mỗi giờ qua Celery Beat.
     """
+
     async def _backfill():
         from app.database.session import async_session_factory
         from app.market_data.service import MarketDataService
@@ -140,6 +146,7 @@ def cleanup_old_data_task(days: int = 90) -> dict:
 
     Chạy hàng ngày qua Celery Beat.
     """
+
     async def _cleanup():
         from app.database.session import async_session_factory
         from app.market_data.service import MarketDataService
@@ -157,6 +164,7 @@ def initial_load_task(symbol: str) -> dict:
 
     Được gọi thủ công hoặc trong lần khởi động đầu tiên.
     """
+
     async def _load():
         from app.database.session import async_session_factory
         from app.market_data.service import MarketDataService

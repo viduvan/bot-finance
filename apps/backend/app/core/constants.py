@@ -46,13 +46,13 @@ DEFAULT_AGENT_WEIGHTS: dict[str, float] = {
 # ── Data Staleness Thresholds (seconds) ──────────────────────────
 
 MAX_DATA_STALENESS_SECONDS = 120  # 2 minutes
-MAX_SNAPSHOT_AGE_SECONDS = 60     # 1 minute
+MAX_SNAPSHOT_AGE_SECONDS = 60  # 1 minute
 
 # ── WebSocket ────────────────────────────────────────────────────
 
-WS_PING_INTERVAL = 20    # seconds
-WS_PING_TIMEOUT = 10     # seconds
-WS_RECONNECT_DELAY = 5   # seconds
+WS_PING_INTERVAL = 20  # seconds
+WS_PING_TIMEOUT = 10  # seconds
+WS_RECONNECT_DELAY = 5  # seconds
 WS_MAX_RECONNECT_DELAY = 300  # 5 minutes
 
 # ── Rate Limiting ────────────────────────────────────────────────

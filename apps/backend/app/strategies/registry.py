@@ -6,7 +6,7 @@ from typing import Protocol
 
 import structlog
 
-from app.strategies.ema_pullback import EMAPullbackStrategy, SignalResult, ema_pullback_strategy
+from app.strategies.ema_pullback import SignalResult, ema_pullback_strategy
 
 logger = structlog.get_logger(__name__)
 
@@ -19,8 +19,7 @@ class Strategy(Protocol):
         features_15m: dict,
         features_1h: dict,
         features_4h: dict,
-    ) -> SignalResult:
-        ...
+    ) -> SignalResult: ...
 
 
 class StrategyRegistry:
@@ -53,7 +52,9 @@ class StrategyRegistry:
         strategy = self.get(strategy_name)
         if strategy is None:
             logger.warning("strategy_not_found", name=strategy_name)
-            return SignalResult(signal="NO_SIGNAL", score=0, reasons=[f"Strategy '{strategy_name}' not found"])
+            return SignalResult(
+                signal="NO_SIGNAL", score=0, reasons=[f"Strategy '{strategy_name}' not found"]
+            )
 
         try:
             result = strategy.evaluate(features_15m, features_1h, features_4h)

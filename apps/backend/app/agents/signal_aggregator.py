@@ -12,7 +12,6 @@ Aggregation logic:
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Any, Literal
 
 import structlog
@@ -41,10 +40,10 @@ class AggregatedSignal:
     def __init__(
         self,
         direction: Literal["LONG", "SHORT", "NO_SIGNAL"],
-        consensus_score: float,         # -100 to +100
+        consensus_score: float,  # -100 to +100
         agent_scores: dict[str, float],
         weights_used: dict[str, float],
-        agreement_pct: float,           # % of agents that agree on direction
+        agreement_pct: float,  # % of agents that agree on direction
     ) -> None:
         self.direction = direction
         self.consensus_score = consensus_score

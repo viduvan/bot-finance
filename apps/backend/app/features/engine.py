@@ -114,7 +114,9 @@ class FeatureEngine:
             )
         elif candle_count_15m < MIN_RECOMMENDED:
             merged["data_sufficient"] = False
-            merged["data_warning"] = f"Only {candle_count_15m} candles — some indicators may be unstable."
+            merged["data_warning"] = (
+                f"Only {candle_count_15m} candles — some indicators may be unstable."
+            )
         else:
             merged["data_sufficient"] = True
             merged["data_warning"] = None

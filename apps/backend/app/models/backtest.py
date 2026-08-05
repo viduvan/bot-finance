@@ -5,11 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class StrategyVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):

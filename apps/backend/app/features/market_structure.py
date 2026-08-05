@@ -144,10 +144,10 @@ class MarketStructure:
             return "RANGING"
 
         # Check last 2 swing highs and lows
-        hh = swing_highs[-1] > swing_highs[-2]   # Higher High
-        hl = swing_lows[-1] > swing_lows[-2]      # Higher Low
-        lh = swing_highs[-1] < swing_highs[-2]    # Lower High
-        ll = swing_lows[-1] < swing_lows[-2]      # Lower Low
+        hh = swing_highs[-1] > swing_highs[-2]  # Higher High
+        hl = swing_lows[-1] > swing_lows[-2]  # Higher Low
+        lh = swing_highs[-1] < swing_highs[-2]  # Lower High
+        ll = swing_lows[-1] < swing_lows[-2]  # Lower Low
 
         if hh and hl:
             return "BULLISH"

@@ -94,11 +94,13 @@ def register_error_handlers(app: FastAPI) -> None:
         errors = []
         for error in exc.errors():
             field = " → ".join(str(loc) for loc in error.get("loc", []))
-            errors.append({
-                "field": field,
-                "message": error.get("msg", ""),
-                "type": error.get("type", ""),
-            })
+            errors.append(
+                {
+                    "field": field,
+                    "message": error.get("msg", ""),
+                    "type": error.get("type", ""),
+                }
+            )
 
         return ORJSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -112,9 +114,7 @@ def register_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> ORJSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> ORJSONResponse:
         """Catch-all for unhandled exceptions.
 
         Logs full traceback but returns generic error to client.

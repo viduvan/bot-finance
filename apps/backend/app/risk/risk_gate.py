@@ -33,9 +33,9 @@ from app.core.metrics import RISK_GATE_REJECTIONS
 logger = structlog.get_logger(__name__)
 
 # Thresholds
-MAX_ATR_PCT = Decimal("4.0")           # Block if ATR% > 4%
-MIN_VOLUME_RELATIVE = Decimal("0.2")   # Block if volume < 20% of average
-LIVE_MIN_SIGNAL_SCORE = 70             # Stricter threshold for live trading
+MAX_ATR_PCT = Decimal("4.0")  # Block if ATR% > 4%
+MIN_VOLUME_RELATIVE = Decimal("0.2")  # Block if volume < 20% of average
+LIVE_MIN_SIGNAL_SCORE = 70  # Stricter threshold for live trading
 PAPER_MIN_SIGNAL_SCORE = 60
 
 
@@ -68,7 +68,9 @@ class RiskGate:
         # ── Condition 1: Account balance > 0
         balance = context.get("account_balance", Decimal("0"))
         if balance <= 0:
-            blocked.append(f"Account balance is {balance} — cannot trade with zero or negative balance")
+            blocked.append(
+                f"Account balance is {balance} — cannot trade with zero or negative balance"
+            )
 
         # ── Condition 2: Daily loss within limit
         daily_loss_pct = context.get("daily_loss_pct", Decimal("0"))
@@ -107,17 +109,13 @@ class RiskGate:
         rr = context.get("risk_reward_ratio", Decimal("0"))
         min_rr = context.get("min_risk_reward_ratio", Decimal("1.5"))
         if rr < min_rr:
-            blocked.append(
-                f"Risk/reward ratio {rr:.2f} below minimum {min_rr:.2f}"
-            )
+            blocked.append(f"Risk/reward ratio {rr:.2f} below minimum {min_rr:.2f}")
 
         # ── Condition 7: Spread acceptable
         spread_bps = context.get("spread_bps", Decimal("0"))
         max_spread = context.get("max_spread_bps", Decimal("50"))
         if spread_bps > max_spread:
-            blocked.append(
-                f"Spread {spread_bps:.1f} bps exceeds maximum {max_spread:.1f} bps"
-            )
+            blocked.append(f"Spread {spread_bps:.1f} bps exceeds maximum {max_spread:.1f} bps")
 
         # ── Condition 8: Market data not stale
         if context.get("market_data_stale", False):

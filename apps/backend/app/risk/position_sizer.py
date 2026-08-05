@@ -18,8 +18,8 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-MAX_RISK_PCT = Decimal("0.05")          # 5% max risk per trade
-MAX_POSITION_PCT = Decimal("0.20")     # 20% max notional per trade
+MAX_RISK_PCT = Decimal("0.05")  # 5% max risk per trade
+MAX_POSITION_PCT = Decimal("0.20")  # 20% max notional per trade
 QUANTITY_PRECISION = Decimal("0.00001000")  # 8 decimal places
 
 
@@ -54,7 +54,9 @@ class PositionSizer:
             dict with: quantity, risk_amount, notional_value, sl_distance,
                        was_capped, cap_reason
         """
-        self._validate_inputs(account_balance, risk_pct, entry_price, stop_loss, direction, max_risk_pct)
+        self._validate_inputs(
+            account_balance, risk_pct, entry_price, stop_loss, direction, max_risk_pct
+        )
 
         # Core formula
         risk_amount = account_balance * risk_pct
@@ -71,7 +73,9 @@ class PositionSizer:
         if raw_notional > max_notional:
             raw_quantity = max_notional / entry_price
             was_capped = True
-            cap_reason = f"Notional {raw_notional:.2f} exceeds {max_position_pct*100:.0f}% of balance"
+            cap_reason = (
+                f"Notional {raw_notional:.2f} exceeds {max_position_pct * 100:.0f}% of balance"
+            )
             logger.warning(
                 "position_size_capped",
                 raw_notional=str(raw_notional),
@@ -123,7 +127,7 @@ class PositionSizer:
         if risk_pct > max_risk_pct:
             raise ValueError(
                 f"risk_pct {risk_pct} exceeds maximum allowed {max_risk_pct} "
-                f"({float(max_risk_pct)*100:.0f}%)"
+                f"({float(max_risk_pct) * 100:.0f}%)"
             )
 
         if entry_price <= 0:

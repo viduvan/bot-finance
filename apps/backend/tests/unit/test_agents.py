@@ -14,15 +14,14 @@ Tests:
 from __future__ import annotations
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.agents.base_agent import BaseAgent, AgentOutput
-from app.agents.signal_aggregator import SignalAggregator, SIGNAL_SCORES
-
+from app.agents.base_agent import BaseAgent
+from app.agents.signal_aggregator import SIGNAL_SCORES, SignalAggregator
 
 # ── JSON extraction ───────────────────────────────────────────────
+
 
 class TestExtractJson:
     """Tests for BaseAgent.extract_json helper."""
@@ -50,11 +49,13 @@ class TestExtractJson:
 
 # ── Pydantic output model validation ─────────────────────────────
 
+
 class TestMarketRegimeOutput:
     """Tests for MarketRegimeOutput Pydantic validation."""
 
     def test_valid_output(self):
         from app.agents.market_regime_agent import MarketRegimeOutput
+
         out = MarketRegimeOutput(
             agent_name="market_regime",
             regime="BULL",
@@ -69,16 +70,19 @@ class TestMarketRegimeOutput:
 
     def test_conviction_clamped_above_100(self):
         from app.agents.market_regime_agent import MarketRegimeOutput
+
         out = MarketRegimeOutput(agent_name="test", conviction=150)
         assert out.conviction == 100
 
     def test_conviction_clamped_below_0(self):
         from app.agents.market_regime_agent import MarketRegimeOutput
+
         out = MarketRegimeOutput(agent_name="test", conviction=-10)
         assert out.conviction == 0
 
     def test_unknown_regime_default(self):
         from app.agents.market_regime_agent import MarketRegimeOutput
+
         out = MarketRegimeOutput(agent_name="test")
         assert out.regime == "UNKNOWN"
 
@@ -88,6 +92,7 @@ class TestTechnicalOutput:
 
     def test_valid_buy_signal(self):
         from app.agents.technical_agent import TechnicalOutput
+
         out = TechnicalOutput(
             agent_name="technical",
             signal="STRONG_BUY",
@@ -101,6 +106,7 @@ class TestTechnicalOutput:
 
     def test_default_neutral(self):
         from app.agents.technical_agent import TechnicalOutput
+
         out = TechnicalOutput(agent_name="technical")
         assert out.signal == "NEUTRAL"
 
@@ -110,11 +116,13 @@ class TestCriticOutput:
 
     def test_proceed_to_proposal_defaults_false(self):
         from app.agents.critic_agent import CriticOutput
+
         out = CriticOutput(agent_name="critic")
         assert out.proceed_to_proposal is False
 
     def test_valid_critic_output(self):
         from app.agents.critic_agent import CriticOutput
+
         out = CriticOutput(
             agent_name="critic",
             final_recommendation="BUY",
@@ -127,11 +135,13 @@ class TestCriticOutput:
 
     def test_quality_score_clamped(self):
         from app.agents.critic_agent import CriticOutput
+
         out = CriticOutput(agent_name="critic", quality_score=120)
         assert out.quality_score == 100
 
 
 # ── SignalAggregator ───────────────────────────────────────────────
+
 
 class TestSignalAggregator:
     """Tests for signal aggregation and consensus scoring."""
@@ -179,7 +189,7 @@ class TestSignalAggregator:
         """Contradicting signals should produce NO_SIGNAL."""
         regime, tech, flow, risk, strategy = self.make_outputs(
             regime_bias="LONG_BIAS",
-            tech_signal="SELL",   # Contradiction
+            tech_signal="SELL",  # Contradiction
             flow_bias="NEUTRAL",
             risk_recommended=False,
             strategy_signal="NO_SIGNAL",
@@ -216,8 +226,18 @@ class TestSignalAggregator:
 
     def test_signal_score_map_covers_all_signals(self, agg):
         """All expected signal types must be in the score map."""
-        expected = {"STRONG_BUY", "BUY", "NEUTRAL", "HOLD", "SELL", "STRONG_SELL", "AVOID",
-                    "LONG_BIAS", "SHORT_BIAS", "UNKNOWN"}
+        expected = {
+            "STRONG_BUY",
+            "BUY",
+            "NEUTRAL",
+            "HOLD",
+            "SELL",
+            "STRONG_SELL",
+            "AVOID",
+            "LONG_BIAS",
+            "SHORT_BIAS",
+            "UNKNOWN",
+        }
         for signal in expected:
             assert signal in SIGNAL_SCORES, f"{signal} missing from SIGNAL_SCORES"
 

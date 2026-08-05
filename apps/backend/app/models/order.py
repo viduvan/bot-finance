@@ -9,7 +9,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Order(Base, UUIDPrimaryKeyMixin, TimestampMixin):

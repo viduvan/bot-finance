@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 
 from app.dependencies import CurrentUser, DBSession
 from app.models.notification import Notification
@@ -72,9 +72,7 @@ async def mark_read(
     db: DBSession,
 ) -> dict:
     """Mark a notification as read."""
-    result = await db.execute(
-        select(Notification).where(Notification.id == notification_id)
-    )
+    result = await db.execute(select(Notification).where(Notification.id == notification_id))
     notif = result.scalar_one_or_none()
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")

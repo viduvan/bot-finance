@@ -24,7 +24,7 @@ from tenacity import (
 )
 
 from app.config import settings
-from app.core.exceptions import BinanceConnectionError, StaleDataError
+from app.core.exceptions import BinanceConnectionError
 
 logger = structlog.get_logger(__name__)
 
@@ -77,7 +77,9 @@ class BinanceRestClient:
 
         if _weight_used + weight > _WEIGHT_LIMIT:
             wait_seconds = 60 - (now - _weight_reset_time).total_seconds()
-            logger.warning("binance_rate_limit_approaching", weight_used=_weight_used, wait=wait_seconds)
+            logger.warning(
+                "binance_rate_limit_approaching", weight_used=_weight_used, wait=wait_seconds
+            )
             if wait_seconds > 0:
                 await asyncio.sleep(wait_seconds)
             _weight_used = 0
@@ -103,8 +105,12 @@ class BinanceRestClient:
             return response.json()
 
         except httpx.HTTPStatusError as e:
-            logger.error("binance_api_error", status=e.response.status_code, body=e.response.text[:500])
-            raise BinanceConnectionError(f"HTTP {e.response.status_code}: {e.response.text[:200]}") from e
+            logger.error(
+                "binance_api_error", status=e.response.status_code, body=e.response.text[:500]
+            )
+            raise BinanceConnectionError(
+                f"HTTP {e.response.status_code}: {e.response.text[:200]}"
+            ) from e
         except httpx.ConnectError as e:
             logger.error("binance_connection_failed", error=str(e))
             raise
@@ -139,22 +145,26 @@ class BinanceRestClient:
 
         candles = []
         for k in raw:
-            candles.append({
-                "open_time": datetime.fromtimestamp(k[0] / 1000, tz=UTC),
-                "open": Decimal(str(k[1])),
-                "high": Decimal(str(k[2])),
-                "low": Decimal(str(k[3])),
-                "close": Decimal(str(k[4])),
-                "volume": Decimal(str(k[5])),
-                "close_time": datetime.fromtimestamp(k[6] / 1000, tz=UTC),
-                "quote_volume": Decimal(str(k[7])),
-                "trades_count": int(k[8]),
-            })
+            candles.append(
+                {
+                    "open_time": datetime.fromtimestamp(k[0] / 1000, tz=UTC),
+                    "open": Decimal(str(k[1])),
+                    "high": Decimal(str(k[2])),
+                    "low": Decimal(str(k[3])),
+                    "close": Decimal(str(k[4])),
+                    "volume": Decimal(str(k[5])),
+                    "close_time": datetime.fromtimestamp(k[6] / 1000, tz=UTC),
+                    "quote_volume": Decimal(str(k[7])),
+                    "trades_count": int(k[8]),
+                }
+            )
         return candles
 
     async def get_ticker_price(self, symbol: str) -> dict:
         """Lấy giá hiện tại cho một cặp giao dịch. Weight: 2."""
-        data = await self._request("GET", "/api/v3/ticker/price", params={"symbol": symbol}, weight=2)
+        data = await self._request(
+            "GET", "/api/v3/ticker/price", params={"symbol": symbol}, weight=2
+        )
         return {
             "symbol": data["symbol"],
             "price": Decimal(str(data["price"])),
@@ -163,7 +173,9 @@ class BinanceRestClient:
 
     async def get_ticker_24h(self, symbol: str) -> dict:
         """Lấy thống kê ticker trong 24h qua. Weight: 2."""
-        data = await self._request("GET", "/api/v3/ticker/24hr", params={"symbol": symbol}, weight=2)
+        data = await self._request(
+            "GET", "/api/v3/ticker/24hr", params={"symbol": symbol}, weight=2
+        )
         return {
             "symbol": data["symbol"],
             "price": Decimal(str(data["lastPrice"])),
@@ -184,7 +196,9 @@ class BinanceRestClient:
 
     async def get_book_ticker(self, symbol: str) -> dict:
         """Lấy giá bid/ask tốt nhất cho một cặp giao dịch. Weight: 2."""
-        data = await self._request("GET", "/api/v3/ticker/bookTicker", params={"symbol": symbol}, weight=2)
+        data = await self._request(
+            "GET", "/api/v3/ticker/bookTicker", params={"symbol": symbol}, weight=2
+        )
         bid = Decimal(str(data["bidPrice"]))
         ask = Decimal(str(data["askPrice"]))
         mid = (bid + ask) / 2
@@ -203,7 +217,9 @@ class BinanceRestClient:
     async def get_depth(self, symbol: str, limit: int = 20) -> dict:
         """Lấy độ sâu sổ lệnh. Weight: 5 cho limit=20, 10 cho 50, 50 cho 500."""
         weight = 5 if limit <= 20 else (10 if limit <= 50 else 50)
-        data = await self._request("GET", "/api/v3/depth", params={"symbol": symbol, "limit": limit}, weight=weight)
+        data = await self._request(
+            "GET", "/api/v3/depth", params={"symbol": symbol, "limit": limit}, weight=weight
+        )
         return {
             "symbol": symbol,
             "last_update_id": data.get("lastUpdateId"),
@@ -212,7 +228,9 @@ class BinanceRestClient:
             "timestamp": datetime.now(UTC),
         }
 
-    async def get_exchange_info(self, symbol: str | None = None, force_refresh: bool = False) -> dict:
+    async def get_exchange_info(
+        self, symbol: str | None = None, force_refresh: bool = False
+    ) -> dict:
         """Lấy quy tắc giao dịch của sàn. Weight: 20. Lưu cache trong 1 giờ."""
         now = datetime.now(UTC)
         if (

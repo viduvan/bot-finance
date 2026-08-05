@@ -19,11 +19,11 @@ class OrderFlowOutput(AgentOutput):
 
     flow_bias: Literal["STRONG_BUY", "BUY", "NEUTRAL", "SELL", "STRONG_SELL"] = "NEUTRAL"
     conviction: int = Field(default=0, ge=0, le=100)
-    volume_signal: str = "NEUTRAL"        # ABOVE_AVERAGE / BELOW_AVERAGE / SPIKE / DRYING_UP
-    vwap_position: str = "NEUTRAL"        # ABOVE / BELOW / AT
-    obv_trend: str = "NEUTRAL"            # RISING / FALLING / FLAT
-    book_pressure: str = "NEUTRAL"        # STRONG_BUY / BUY / NEUTRAL / SELL / STRONG_SELL
-    buy_pressure_pct: str = "50"          # Percentage of volume that is buying
+    volume_signal: str = "NEUTRAL"  # ABOVE_AVERAGE / BELOW_AVERAGE / SPIKE / DRYING_UP
+    vwap_position: str = "NEUTRAL"  # ABOVE / BELOW / AT
+    obv_trend: str = "NEUTRAL"  # RISING / FALLING / FLAT
+    book_pressure: str = "NEUTRAL"  # STRONG_BUY / BUY / NEUTRAL / SELL / STRONG_SELL
+    buy_pressure_pct: str = "50"  # Percentage of volume that is buying
     key_observations: list[str] = Field(default_factory=list)
     summary: str = ""
 
@@ -68,32 +68,32 @@ JSON format:
         return f"""Analyze order flow for {symbol}:
 
 VOLUME ANALYSIS:
-- Current Volume: {f.get('volume_current', 'N/A')}
-- Volume SMA(20): {f.get('volume_sma_20', 'N/A')}
-- Relative Volume: {f.get('volume_relative', 'N/A')}x average
-- Volume Spike: {f.get('volume_spike', 'N/A')}
-- Volume Trend (3-candle slope): {f.get('volume_trend_slope', 'N/A')}
-- Volume Increasing: {f.get('volume_increasing', 'N/A')}
+- Current Volume: {f.get("volume_current", "N/A")}
+- Volume SMA(20): {f.get("volume_sma_20", "N/A")}
+- Relative Volume: {f.get("volume_relative", "N/A")}x average
+- Volume Spike: {f.get("volume_spike", "N/A")}
+- Volume Trend (3-candle slope): {f.get("volume_trend_slope", "N/A")}
+- Volume Increasing: {f.get("volume_increasing", "N/A")}
 
 BUYING/SELLING PRESSURE:
-- Buy Pressure: {f.get('buy_pressure_pct', 'N/A')}%
-- Sell Pressure: {f.get('sell_pressure_pct', 'N/A')}%
-- Pressure Bias: {f.get('pressure_bias', 'N/A')}
+- Buy Pressure: {f.get("buy_pressure_pct", "N/A")}%
+- Sell Pressure: {f.get("sell_pressure_pct", "N/A")}%
+- Pressure Bias: {f.get("pressure_bias", "N/A")}
 
 VWAP:
-- VWAP: {f.get('vwap', 'N/A')}
-- Price Above VWAP: {f.get('price_above_vwap', 'N/A')}
-- Current Price: {f.get('close', 'N/A')}
+- VWAP: {f.get("vwap", "N/A")}
+- Price Above VWAP: {f.get("price_above_vwap", "N/A")}
+- Current Price: {f.get("close", "N/A")}
 
 ON-BALANCE VOLUME:
-- OBV: {f.get('obv', 'N/A')}
+- OBV: {f.get("obv", "N/A")}
 
 ORDER BOOK (if available):
-- Best Bid: {f.get('ob_best_bid', 'N/A')} | Best Ask: {f.get('ob_best_ask', 'N/A')}
-- Spread: {f.get('ob_spread_bps', 'N/A')} bps
-- Order Imbalance: {f.get('ob_order_imbalance_pct', 'N/A')}%
-- Book Pressure: {f.get('ob_book_pressure', 'N/A')}
-- Bid Wall: {f.get('ob_bid_wall', 'N/A')} | Ask Wall: {f.get('ob_ask_wall', 'N/A')}
+- Best Bid: {f.get("ob_best_bid", "N/A")} | Best Ask: {f.get("ob_best_ask", "N/A")}
+- Spread: {f.get("ob_spread_bps", "N/A")} bps
+- Order Imbalance: {f.get("ob_order_imbalance_pct", "N/A")}%
+- Book Pressure: {f.get("ob_book_pressure", "N/A")}
+- Bid Wall: {f.get("ob_bid_wall", "N/A")} | Ask Wall: {f.get("ob_ask_wall", "N/A")}
 
 Based on this data, determine if smart money is accumulating or distributing."""
 

@@ -52,13 +52,9 @@ class ExchangeFilter:
 
         # 2. Validate quantity bounds
         if adjusted_qty < min_qty:
-            raise ValueError(
-                f"quantity {adjusted_qty} is below minimum allowed ({min_qty})"
-            )
+            raise ValueError(f"quantity {adjusted_qty} is below minimum allowed ({min_qty})")
         if adjusted_qty > max_qty:
-            raise ValueError(
-                f"quantity {adjusted_qty} exceeds maximum allowed ({max_qty})"
-            )
+            raise ValueError(f"quantity {adjusted_qty} exceeds maximum allowed ({max_qty})")
 
         # 3. Round price to nearest tick_size (floor)
         adjusted_price = self._floor_to_step(price, tick_size)
@@ -66,9 +62,7 @@ class ExchangeFilter:
         # 4. Check min notional
         notional = (adjusted_qty * adjusted_price).quantize(Decimal("0.00000001"))
         if notional < min_notional:
-            raise ValueError(
-                f"notional {notional} is below minimum required ({min_notional})"
-            )
+            raise ValueError(f"notional {notional} is below minimum required ({min_notional})")
 
         logger.debug(
             "exchange_filter_applied",

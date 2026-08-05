@@ -10,15 +10,15 @@ Rules:
 
 from __future__ import annotations
 
-from decimal import ROUND_DOWN, Decimal
+from decimal import Decimal
 from typing import Any
 
 import structlog
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_FEE_RATE = Decimal("0.001")       # Binance 0.1%
-DEFAULT_SLIPPAGE_BPS = Decimal("5")       # 5 basis points
+DEFAULT_FEE_RATE = Decimal("0.001")  # Binance 0.1%
+DEFAULT_SLIPPAGE_BPS = Decimal("5")  # 5 basis points
 PRICE_PRECISION = Decimal("0.00000001")
 
 

@@ -9,7 +9,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class TradeProposal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -42,9 +42,7 @@ class TradeProposal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     supporting_reasons: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
     risk_warnings: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
     critic_objections: Mapped[dict] = mapped_column(JSON_TYPE, default=list)
-    market_snapshot_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
+    market_snapshot_id: Mapped[str | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     environment: Mapped[str] = mapped_column(String(10), nullable=False, default="PAPER")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_by: Mapped[str | None] = mapped_column(String(50), nullable=True)

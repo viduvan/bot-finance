@@ -64,14 +64,14 @@ class PaperExecutionService:
         """
         status = proposal.get("status", "")
         if status != "APPROVED":
-            raise ValueError(
-                f"Cannot execute proposal in status {status!r} — must be APPROVED"
-            )
+            raise ValueError(f"Cannot execute proposal in status {status!r} — must be APPROVED")
 
         symbol = proposal["symbol"]
         recommendation = proposal.get("recommendation", "BUY")
         order_type = proposal.get("suggested_order_type", "MARKET")
-        order_price = Decimal(str(proposal["suggested_price"])) if proposal.get("suggested_price") else None
+        order_price = (
+            Decimal(str(proposal["suggested_price"])) if proposal.get("suggested_price") else None
+        )
         quantity = Decimal(str(proposal["suggested_quantity"]))
         environment = proposal.get("environment", "PAPER")
         side_position = RECOMMENDATION_TO_SIDE.get(recommendation, "LONG")
@@ -96,7 +96,9 @@ class PaperExecutionService:
             fill["filled"] = True
             fill["fill_price"] = order_price or current_price
             fill["fill_quantity"] = quantity
-            fill["fee"] = (fill["fill_price"] * quantity * Decimal("0.001")).quantize(Decimal("0.00100000"))
+            fill["fee"] = (fill["fill_price"] * quantity * Decimal("0.001")).quantize(
+                Decimal("0.00100000")
+            )
             fill["notional"] = fill["fill_price"] * quantity
 
         fill_price = fill["fill_price"]
@@ -167,8 +169,9 @@ class PaperExecutionServiceAsync:
             Execution result with DB IDs
         """
         from datetime import UTC, datetime
+
         from app.models.order import Order, OrderFill
-        from app.models.position import Position, TradeResult
+        from app.models.position import Position
         from app.repositories.proposal_repo import ProposalRepository
 
         # Execute (synchronous logic)
@@ -258,6 +261,7 @@ class PaperExecutionServiceAsync:
     async def _notify_order_filled(self, result: dict) -> None:
         """Send Telegram notification when order is filled."""
         from app.config import settings
+
         if not settings.telegram_enabled:
             return
 
@@ -277,12 +281,16 @@ class PaperExecutionServiceAsync:
 
         try:
             import httpx
+
             url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
             async with httpx.AsyncClient(timeout=5) as client:
-                await client.post(url, json={
-                    "chat_id": settings.telegram_chat_id,
-                    "text": message,
-                    "parse_mode": "Markdown",
-                })
+                await client.post(
+                    url,
+                    json={
+                        "chat_id": settings.telegram_chat_id,
+                        "text": message,
+                        "parse_mode": "Markdown",
+                    },
+                )
         except Exception as e:
             logger.warning("telegram_fill_notification_failed", error=str(e))

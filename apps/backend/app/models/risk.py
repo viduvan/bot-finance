@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class RiskEvent(Base, UUIDPrimaryKeyMixin, TimestampMixin):

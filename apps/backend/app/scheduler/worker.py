@@ -33,21 +33,17 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
-
     # Task execution
     task_track_started=True,
-    task_time_limit=450,       # Hard kill after 7.5 minutes
+    task_time_limit=450,  # Hard kill after 7.5 minutes
     task_soft_time_limit=400,  # Soft timeout after 6.6 minutes
     worker_max_tasks_per_child=100,  # Restart worker after 100 tasks (prevent memory leaks)
-    worker_prefetch_multiplier=1,    # Fair scheduling
-
+    worker_prefetch_multiplier=1,  # Fair scheduling
     # Result backend
     result_expires=3600,  # Results expire after 1 hour
-
     # Retry policy
     task_default_retry_delay=10,
     task_max_retries=3,
-
     # Task routes — all tasks use default 'celery' queue for single-worker setup
     # task_routes kept empty to avoid routing to non-existent queues
     task_routes={},
@@ -122,6 +118,7 @@ if settings.analysis_schedule_enabled:
 def system_heartbeat() -> dict:
     """Periodic heartbeat to verify worker is alive."""
     from datetime import UTC, datetime
+
     return {
         "status": "alive",
         "timestamp": datetime.now(UTC).isoformat(),

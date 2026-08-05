@@ -6,7 +6,7 @@ Secrets are never logged or exposed via API.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -14,14 +14,14 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
     TESTING = "testing"
 
 
-class TradingMode(str, Enum):
+class TradingMode(StrEnum):
     BACKTEST = "BACKTEST"
     PAPER = "PAPER"
     LIVE = "LIVE"
@@ -35,8 +35,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=(
-            str(_project_root / ".env"),   # project root: /bot-finance/.env
-            ".env",                         # local fallback: apps/backend/.env
+            str(_project_root / ".env"),  # project root: /bot-finance/.env
+            ".env",  # local fallback: apps/backend/.env
         ),
         env_file_encoding="utf-8",
         case_sensitive=False,
@@ -140,6 +140,7 @@ class Settings(BaseSettings):
         v = self.llm_fallback_chain.strip()
         if v.startswith("["):
             import json
+
             try:
                 return json.loads(v)
             except json.JSONDecodeError:

@@ -66,8 +66,9 @@ If the user speaks Vietnamese, respond in Vietnamese. If English, respond in Eng
             raise ValueError("Gemini API key not configured")
 
         try:
-            from google import genai
             import asyncio
+
+            from google import genai
 
             client = genai.Client(api_key=self._api_key)
 
@@ -121,16 +122,12 @@ If the user speaks Vietnamese, respond in Vietnamese. If English, respond in Eng
             }
 
         except ImportError:
-            raise ValueError(
-                "google-genai package not installed. Run: pip install google-genai"
-            )
+            raise ValueError("google-genai package not installed. Run: pip install google-genai")
         except Exception as e:
             logger.error("gemini_chat_error", error=str(e))
             raise
 
-    def _build_enriched_prompt(
-        self, message: str, tools_context: dict[str, Any] | None
-    ) -> str:
+    def _build_enriched_prompt(self, message: str, tools_context: dict[str, Any] | None) -> str:
         """Build a prompt enriched with tool data context."""
         if not tools_context:
             return message
@@ -149,9 +146,7 @@ If the user speaks Vietnamese, respond in Vietnamese. If English, respond in Eng
                 context_parts.append(f"  {tool_data}")
 
         context_parts.append("\n--- END DATA ---")
-        context_parts.append(
-            "\nUse the above live data to answer the user's question accurately."
-        )
+        context_parts.append("\nUse the above live data to answer the user's question accurately.")
 
         return "\n".join(context_parts)
 

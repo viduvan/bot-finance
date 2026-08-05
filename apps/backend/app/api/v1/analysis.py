@@ -21,6 +21,7 @@ async def trigger_analysis(
     Returns the Celery task ID — poll /analysis/task/{task_id} for result.
     """
     from app.scheduler.analysis_tasks import run_analysis_for_symbol
+
     task = run_analysis_for_symbol.apply_async(args=[symbol])
     return {
         "status": "queued",
@@ -55,6 +56,7 @@ async def get_analysis_task_status(
 ) -> dict:
     """Get the status/result of a queued analysis task."""
     from app.scheduler.worker import celery_app
+
     task_result = celery_app.AsyncResult(task_id)
 
     if task_result.state == "PENDING":
@@ -77,6 +79,7 @@ async def get_analysis_history(
 ) -> dict:
     """Get recent analysis workflow history for a symbol."""
     from app.repositories.agent_repo import AgentWorkflowRepository
+
     repo = AgentWorkflowRepository(db)
     workflows = await repo.get_recent_workflows(symbol, limit)
 

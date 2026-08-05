@@ -14,6 +14,7 @@ checking daily loss from Redis.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
@@ -154,11 +155,9 @@ class RiskEngine:
         gate_result = self._gate.check(context)
 
         if not gate_result["allowed"]:
-            for reason in gate_result["blocked_reasons"]:
-                try:
+            for _reason in gate_result["blocked_reasons"]:
+                with contextlib.suppress(Exception):
                     RISK_REJECTIONS.labels(event_type="gate_block").inc()
-                except Exception:
-                    pass
 
             logger.warning(
                 "risk_engine_blocked",

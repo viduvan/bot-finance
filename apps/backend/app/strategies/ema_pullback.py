@@ -44,13 +44,13 @@ class SignalResult:
     """Output from strategy evaluation."""
 
     signal: Literal["LONG", "SHORT", "NO_SIGNAL"]
-    score: int                          # 0-100
+    score: int  # 0-100
     reasons: list[str] = field(default_factory=list)
     entry_zone_low: Decimal | None = None
     entry_zone_high: Decimal | None = None
     stop_loss_hint: Decimal | None = None  # Suggested SL price (Risk Engine will finalize)
     take_profit_hint: Decimal | None = None
-    confidence: str = "LOW"             # LOW / MEDIUM / HIGH
+    confidence: str = "LOW"  # LOW / MEDIUM / HIGH
 
 
 class EMAPullbackStrategy:
@@ -91,7 +91,9 @@ class EMAPullbackStrategy:
 
         # Both below threshold or tied
         best_score = max(long_result.score, short_result.score)
-        reasons = long_result.reasons if long_result.score >= short_result.score else short_result.reasons
+        reasons = (
+            long_result.reasons if long_result.score >= short_result.score else short_result.reasons
+        )
         return SignalResult(
             signal="NO_SIGNAL",
             score=best_score,
@@ -134,10 +136,9 @@ class EMAPullbackStrategy:
         # 3. Macro trend on 4h: EMA21 > EMA50 — 10 pts (optional)
         ema_21_4h = self._get_decimal(f4h, "ema_21")
         ema_50_4h = self._get_decimal(f4h, "ema_50")
-        if ema_21_4h and ema_50_4h:
-            if ema_21_4h > ema_50_4h:
-                score += 10
-                reasons.append("EMA21 > EMA50 (4h macro bullish)")
+        if ema_21_4h and ema_50_4h and ema_21_4h > ema_50_4h:
+            score += 10
+            reasons.append("EMA21 > EMA50 (4h macro bullish)")
 
         # Hard stop if core trend not met
         if disqualifiers:
@@ -162,7 +163,7 @@ class EMAPullbackStrategy:
 
             if in_pullback_zone:
                 score += 20
-                reasons.append(f"Price within 1×ATR of EMA21 (pullback zone)")
+                reasons.append("Price within 1×ATR of EMA21 (pullback zone)")
             elif close_15 > ema_21 + atr * 2:
                 disqualifiers.append("Price too extended from EMA21")
 
@@ -197,7 +198,7 @@ class EMAPullbackStrategy:
             reasons.append("Price above VWAP (intraday bullish bias)")
 
         # 8. Volume confirmation — 5 pts
-        volume_increasing = f15.get("volume_increasing")
+        f15.get("volume_increasing")
         pressure_bias = f15.get("pressure_bias", "")
         if pressure_bias == "BULLISH":
             score += 5
@@ -293,10 +294,9 @@ class EMAPullbackStrategy:
 
         # 5. RSI between 35-60 — 15 pts
         rsi = self._get_decimal(f15, "rsi_14")
-        if rsi is not None:
-            if Decimal("35") <= rsi <= Decimal("60"):
-                score += 15
-                reasons.append(f"RSI {rsi} in healthy zone for short")
+        if rsi is not None and Decimal("35") <= rsi <= Decimal("60"):
+            score += 15
+            reasons.append(f"RSI {rsi} in healthy zone for short")
 
         # 6. MACD histogram negative or turning negative — 10 pts
         macd_hist = self._get_decimal(f15, "macd_histogram")

@@ -27,7 +27,9 @@ async def get_latest_features(
     engine = FeatureEngine(db)
     features = await engine.get_latest_features(symbol)
     if features is None:
-        return {"message": f"No features found for {symbol}. Trigger /features/{symbol}/compute first."}
+        return {
+            "message": f"No features found for {symbol}. Trigger /features/{symbol}/compute first."
+        }
     return features
 
 
@@ -73,14 +75,10 @@ async def get_strategy_signal(
     # For now use same features — in future fetch each timeframe separately
     # TODO: store per-timeframe features separately
     features_1h = {
-        k.removeprefix("tf1h_"): v
-        for k, v in features_15m.items()
-        if k.startswith("tf1h_")
+        k.removeprefix("tf1h_"): v for k, v in features_15m.items() if k.startswith("tf1h_")
     }
     features_4h = {
-        k.removeprefix("tf4h_"): v
-        for k, v in features_15m.items()
-        if k.startswith("tf4h_")
+        k.removeprefix("tf4h_"): v for k, v in features_15m.items() if k.startswith("tf4h_")
     }
 
     result = strategy_registry.evaluate(strategy, features_15m, features_1h, features_4h)

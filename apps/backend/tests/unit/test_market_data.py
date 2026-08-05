@@ -72,8 +72,8 @@ class TestDataValidator:
         """Nhiều khoảng trống phải đều được phát hiện."""
         candles = [
             self._make_candle(0),
-            self._make_candle(60),    # Gap 1: thiếu 15, 30, 45
-            self._make_candle(150),   # Gap 2: thiếu 75, 90, 105, 120, 135
+            self._make_candle(60),  # Gap 1: thiếu 15, 30, 45
+            self._make_candle(150),  # Gap 2: thiếu 75, 90, 105, 120, 135
         ]
         result = validator.validate_candles(candles, "BTCUSDT", "15m")
         assert result["gap_count"] == 2

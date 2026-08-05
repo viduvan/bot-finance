@@ -11,8 +11,8 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
-from typing import Any
 
 import httpx
 import structlog
@@ -24,9 +24,9 @@ logger = structlog.get_logger(__name__)
 
 # Cost per 1M tokens (USD) — approximate
 COST_PER_1M_TOKENS: dict[str, dict[str, float]] = {
-    "ollama": {"input": 0.0, "output": 0.0},              # Local — free
-    "gemini": {"input": 0.10, "output": 0.40},             # gemini-2.5-flash
-    "openai": {"input": 0.15, "output": 0.60},             # gpt-4o-mini
+    "ollama": {"input": 0.0, "output": 0.0},  # Local — free
+    "gemini": {"input": 0.10, "output": 0.40},  # gemini-2.5-flash
+    "openai": {"input": 0.15, "output": 0.60},  # gpt-4o-mini
 }
 
 
@@ -52,10 +52,9 @@ class LLMResponse:
     @property
     def estimated_cost_usd(self) -> float:
         costs = COST_PER_1M_TOKENS.get(self.provider, {})
-        return (
-            self.input_tokens / 1_000_000 * costs.get("input", 0)
-            + self.output_tokens / 1_000_000 * costs.get("output", 0)
-        )
+        return self.input_tokens / 1_000_000 * costs.get(
+            "input", 0
+        ) + self.output_tokens / 1_000_000 * costs.get("output", 0)
 
 
 class LLMProviderError(Exception):
@@ -252,9 +251,11 @@ class LLMClient:
         Returns:
             LLMResponse from the first successful provider
         """
-        chain = [preferred_provider] + [
-            p for p in self._fallback_chain if p != preferred_provider
-        ] if preferred_provider else self._fallback_chain
+        chain = (
+            [preferred_provider] + [p for p in self._fallback_chain if p != preferred_provider]
+            if preferred_provider
+            else self._fallback_chain
+        )
 
         last_error: Exception | None = None
 
@@ -274,13 +275,11 @@ class LLMClient:
 
                 if i > 0:
                     from_provider = chain[0]
-                    try:
+                    with contextlib.suppress(Exception):
                         LLM_FALLBACK.labels(
                             from_provider=from_provider,
                             to_provider=provider_name,
                         ).inc()
-                    except Exception:
-                        pass
 
                 logger.info(
                     "llm_success",
@@ -299,10 +298,8 @@ class LLMClient:
                     provider=provider_name,
                     error=str(e),
                 )
-                try:
+                with contextlib.suppress(Exception):
                     LLM_REQUESTS.labels(provider=provider_name, status="timeout").inc()
-                except Exception:
-                    pass
 
             except Exception as e:
                 last_error = e
@@ -311,28 +308,22 @@ class LLMClient:
                     provider=provider_name,
                     error=str(e),
                 )
-                try:
+                with contextlib.suppress(Exception):
                     LLM_REQUESTS.labels(provider=provider_name, status="error").inc()
-                except Exception:
-                    pass
 
-        raise LLMProviderError(
-            f"All LLM providers failed. Last error: {last_error}"
-        )
+        raise LLMProviderError(f"All LLM providers failed. Last error: {last_error}")
 
     def _record_metrics(self, response: LLMResponse) -> None:
         """Record Prometheus metrics for a successful LLM call."""
         try:
             LLM_REQUESTS.labels(provider=response.provider, status="success").inc()
-            LLM_TOKENS_TOTAL.labels(
-                provider=response.provider, direction="input"
-            ).inc(response.input_tokens)
-            LLM_TOKENS_TOTAL.labels(
-                provider=response.provider, direction="output"
-            ).inc(response.output_tokens)
-            LLM_COST_TOTAL.labels(provider=response.provider).inc(
-                response.estimated_cost_usd
+            LLM_TOKENS_TOTAL.labels(provider=response.provider, direction="input").inc(
+                response.input_tokens
             )
+            LLM_TOKENS_TOTAL.labels(provider=response.provider, direction="output").inc(
+                response.output_tokens
+            )
+            LLM_COST_TOTAL.labels(provider=response.provider).inc(response.estimated_cost_usd)
         except Exception:
             pass  # Metrics must never block core logic
 

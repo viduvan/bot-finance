@@ -13,10 +13,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # State Machine
@@ -42,6 +40,7 @@ class TestProposalStateMachine:
     @pytest.fixture
     def sm(self):
         from app.proposals.state_machine import ProposalStateMachine
+
         return ProposalStateMachine()
 
     def test_draft_to_pending_review(self, sm):
@@ -120,6 +119,7 @@ class TestApprovalTokenManager:
     @pytest.fixture
     def manager(self):
         from app.proposals.approval_token import ApprovalTokenManager
+
         return ApprovalTokenManager(secret="test-secret-32-bytes-for-hmac!!")
 
     def make_proposal(self, price="50000") -> dict:
@@ -180,7 +180,11 @@ class TestApprovalTokenManager:
         modified = self.make_proposal(price="51000")
         result = manager.validate(token=token, proposal=modified, user_id="user-1")
         assert result["valid"] is False
-        assert "payload" in result["reason"].lower() or "mismatch" in result["reason"].lower() or "changed" in result["reason"].lower()
+        assert (
+            "payload" in result["reason"].lower()
+            or "mismatch" in result["reason"].lower()
+            or "changed" in result["reason"].lower()
+        )
 
     def test_different_proposals_get_different_tokens(self, manager):
         """Two proposals should produce different tokens."""
@@ -211,6 +215,7 @@ class TestProposalBuilder:
     @pytest.fixture
     def builder(self):
         from app.proposals.builder import ProposalBuilder
+
         return ProposalBuilder()
 
     def make_analysis_result(self, direction="LONG", score=75, proceed=True) -> dict:
@@ -329,6 +334,7 @@ class TestPriceDriftGuard:
     @pytest.fixture
     def guard(self):
         from app.proposals.price_drift import PriceDriftGuard
+
         return PriceDriftGuard(max_drift_bps=20)  # 20 bps = 0.2%
 
     def test_no_drift_within_threshold(self, guard):
@@ -387,6 +393,7 @@ class TestProposalExpirationService:
     @pytest.fixture
     def svc(self):
         from app.proposals.expiration import ProposalExpirationService
+
         return ProposalExpirationService()
 
     def make_proposal(self, expires_delta_seconds: int) -> dict:

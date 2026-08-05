@@ -17,11 +17,11 @@ import asyncio
 import json
 
 import structlog
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from app.api.websocket.connection_manager import event_manager
-from app.core.security import decode_token
 from app.core.exceptions import AuthenticationError
+from app.core.security import decode_token
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -54,10 +54,14 @@ async def events_websocket(
     logger.info("events_ws_connected", user_id=user_id)
 
     try:
-        await event_manager.send_personal(ws, "connected", {
-            "message": "ACTA event stream active",
-            "user_id": user_id,
-        })
+        await event_manager.send_personal(
+            ws,
+            "connected",
+            {
+                "message": "ACTA event stream active",
+                "user_id": user_id,
+            },
+        )
 
         # Keep alive loop
         while True:
@@ -70,7 +74,7 @@ async def events_websocket(
                 except json.JSONDecodeError:
                     pass
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 try:
                     await event_manager.send_personal(ws, "ping", {})
                 except Exception:

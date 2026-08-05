@@ -26,8 +26,8 @@ class RiskAnalysisOutput(AgentOutput):
     conviction: int = Field(default=0, ge=0, le=100)
     primary_risks: list[str] = Field(default_factory=list)
     risk_mitigants: list[str] = Field(default_factory=list)
-    sl_quality: str = "UNKNOWN"           # TIGHT / ADEQUATE / WIDE
-    rr_assessment: str = "POOR"           # POOR / ACCEPTABLE / GOOD / EXCELLENT
+    sl_quality: str = "UNKNOWN"  # TIGHT / ADEQUATE / WIDE
+    rr_assessment: str = "POOR"  # POOR / ACCEPTABLE / GOOD / EXCELLENT
     position_size_note: str = ""
     volatility_concern: bool = False
     liquidity_concern: bool = False
@@ -94,25 +94,25 @@ PROPOSED TRADE:
 - Entry Zone: {entry_zone_low} to {entry_zone_high}
 - Stop Loss Hint: {sl_hint}
 - Take Profit Hint: {tp_hint}
-- Current Price: {f.get('close', 'N/A')}
+- Current Price: {f.get("close", "N/A")}
 
 VOLATILITY:
-- ATR(14): {f.get('atr_14', 'N/A')}
-- ATR%: {f.get('atr_pct', 'N/A')}%
-- Volatility Regime: {f.get('volatility_regime', 'N/A')}
-- Historical Volatility: {f.get('historical_volatility_20', 'N/A')}%
-- BB Squeeze: {f.get('bb_squeeze', 'N/A')} | BB Expansion: {f.get('bb_expansion', 'N/A')}
+- ATR(14): {f.get("atr_14", "N/A")}
+- ATR%: {f.get("atr_pct", "N/A")}%
+- Volatility Regime: {f.get("volatility_regime", "N/A")}
+- Historical Volatility: {f.get("historical_volatility_20", "N/A")}%
+- BB Squeeze: {f.get("bb_squeeze", "N/A")} | BB Expansion: {f.get("bb_expansion", "N/A")}
 
 LIQUIDITY:
-- Spread: {f.get('ob_spread_bps', 'N/A')} bps
-- Relative Volume: {f.get('volume_relative', 'N/A')}x
-- Volume Spike: {f.get('volume_spike', 'N/A')}
-- Book Pressure: {f.get('ob_book_pressure', 'N/A')}
+- Spread: {f.get("ob_spread_bps", "N/A")} bps
+- Relative Volume: {f.get("volume_relative", "N/A")}x
+- Volume Spike: {f.get("volume_spike", "N/A")}
+- Book Pressure: {f.get("ob_book_pressure", "N/A")}
 
 RISK ENGINE PRE-CHECK:
-- Gate Allowed: {risk_assessment.get('allowed', 'N/A')}
-- Risk Score: {risk_assessment.get('risk_score', 'N/A')}/100
-- Blocked Reasons: {', '.join(risk_assessment.get('blocked_reasons', [])) or 'None'}
+- Gate Allowed: {risk_assessment.get("allowed", "N/A")}
+- Risk Score: {risk_assessment.get("risk_score", "N/A")}/100
+- Blocked Reasons: {", ".join(risk_assessment.get("blocked_reasons", [])) or "None"}
 
 Provide a thorough risk assessment. Be conservative."""
 

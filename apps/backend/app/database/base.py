@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
-from sqlalchemy import JSON, String, DateTime, func
+from sqlalchemy import JSON, DateTime, String, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 

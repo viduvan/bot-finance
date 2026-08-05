@@ -8,8 +8,8 @@ Only approved orders may execute.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request
@@ -22,9 +22,9 @@ from app.core.constants import APP_DESCRIPTION, APP_NAME, APP_VERSION
 from app.core.logging import setup_logging
 from app.core.metrics import SYSTEM_UP
 from app.database.session import close_db, init_db
-from app.services.telegram_service import telegram_service
 from app.market_data.binance_rest import binance_client
 from app.market_data.binance_ws import ws_manager
+from app.services.telegram_service import telegram_service
 
 logger = structlog.get_logger(__name__)
 
@@ -34,7 +34,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application startup and shutdown lifecycle."""
     # ── Startup ──────────────────────────────────────────────
     setup_logging()
-    logger.info("starting_application", env=settings.app_env.value, mode=settings.trading_mode.value)
+    logger.info(
+        "starting_application", env=settings.app_env.value, mode=settings.trading_mode.value
+    )
 
     # Initialize database
     await init_db()
@@ -66,12 +68,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 1. Stop accepting new WebSocket connections — close all active clients
     try:
         from app.api.websocket.connection_manager import event_manager
+
         conn_count = event_manager.connection_count
         if conn_count > 0:
             logger.info("closing_ws_connections", count=conn_count)
-            await event_manager.broadcast("server_shutdown", {
-                "message": "Server is shutting down. Please reconnect shortly.",
-            })
+            await event_manager.broadcast(
+                "server_shutdown",
+                {
+                    "message": "Server is shutting down. Please reconnect shortly.",
+                },
+            )
     except Exception as e:
         logger.warning("ws_broadcast_shutdown_failed", error=str(e))
 
@@ -112,8 +118,12 @@ def create_app() -> FastAPI:
         version=APP_VERSION,
         lifespan=lifespan,
         default_response_class=ORJSONResponse,
-        docs_url="/api/docs" if (settings.debug or settings.app_env == Environment.DEVELOPMENT) else None,
-        redoc_url="/api/redoc" if (settings.debug or settings.app_env == Environment.DEVELOPMENT) else None,
+        docs_url="/api/docs"
+        if (settings.debug or settings.app_env == Environment.DEVELOPMENT)
+        else None,
+        redoc_url="/api/redoc"
+        if (settings.debug or settings.app_env == Environment.DEVELOPMENT)
+        else None,
     )
 
     # ── Middleware ────────────────────────────────────────────
@@ -137,10 +147,12 @@ def create_app() -> FastAPI:
 
     # Global error handlers
     from app.api.middleware.error_handler import register_error_handlers
+
     register_error_handlers(app)
 
     # Rate limiting
     from app.api.middleware.rate_limit import register_rate_limiter
+
     register_rate_limiter(app)
 
     # ── Routes ───────────────────────────────────────────────
@@ -161,6 +173,7 @@ def create_app() -> FastAPI:
     async def add_request_id(request: Request, call_next):  # type: ignore[no-untyped-def]
         """Add unique request ID to every request for tracing."""
         import uuid
+
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(request_id=request_id)
@@ -169,19 +182,19 @@ def create_app() -> FastAPI:
         return response
 
     # Import and register API routers
-    from app.api.v1.auth import router as auth_router
-    from app.api.v1.system import router as system_router
-    from app.api.v1.market import router as market_router
-    from app.api.websocket.market_ws import router as market_ws_router
-    from app.api.websocket.events_ws import router as events_ws_router
-    from app.api.v1.features import router as features_router
-    from app.api.v1.analysis import router as analysis_router
-    from app.api.v1.proposals import router as proposals_router
-    from app.api.v1.execution import router as execution_router
-    from app.api.v1.notifications import router as notifications_router
-    from app.api.v1.audit import router as audit_router
-    from app.api.v1.orders import router as orders_router
     from app.api.v1.ai_chat import router as ai_chat_router
+    from app.api.v1.analysis import router as analysis_router
+    from app.api.v1.audit import router as audit_router
+    from app.api.v1.auth import router as auth_router
+    from app.api.v1.execution import router as execution_router
+    from app.api.v1.features import router as features_router
+    from app.api.v1.market import router as market_router
+    from app.api.v1.notifications import router as notifications_router
+    from app.api.v1.orders import router as orders_router
+    from app.api.v1.proposals import router as proposals_router
+    from app.api.v1.system import router as system_router
+    from app.api.websocket.events_ws import router as events_ws_router
+    from app.api.websocket.market_ws import router as market_ws_router
 
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
     app.include_router(system_router, prefix="/api/v1/system", tags=["system"])

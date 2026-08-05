@@ -6,10 +6,8 @@ Users must open the dashboard to approve proposals.
 
 from __future__ import annotations
 
-from typing import Any
-
-import structlog
 import httpx
+import structlog
 
 from app.config import settings
 

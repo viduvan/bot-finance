@@ -47,6 +47,7 @@ class ProposalExpirationService:
         now = datetime.now(UTC)
         if isinstance(expires_at, str):
             from datetime import datetime as dt
+
             expires_at = dt.fromisoformat(expires_at)
 
         # Ensure timezone-aware comparison
@@ -64,6 +65,7 @@ class ProposalExpirationService:
         now = datetime.now(UTC)
         if isinstance(expires_at, str):
             from datetime import datetime as dt
+
             expires_at = dt.fromisoformat(expires_at)
 
         if expires_at.tzinfo is None:

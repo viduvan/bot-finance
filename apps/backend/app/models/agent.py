@@ -9,7 +9,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, JSON_TYPE, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import JSON_TYPE, Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class AgentWorkflow(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -30,9 +30,7 @@ class AgentWorkflow(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    agent_runs: Mapped[list[AgentRun]] = relationship(
-        back_populates="workflow", lazy="selectin"
-    )
+    agent_runs: Mapped[list[AgentRun]] = relationship(back_populates="workflow", lazy="selectin")
 
 
 class AgentRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -59,9 +57,7 @@ class AgentRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # Relationships
     workflow: Mapped[AgentWorkflow] = relationship(back_populates="agent_runs")
-    outputs: Mapped[list[AgentOutput]] = relationship(
-        back_populates="agent_run", lazy="selectin"
-    )
+    outputs: Mapped[list[AgentOutput]] = relationship(back_populates="agent_run", lazy="selectin")
 
 
 class AgentOutput(Base, UUIDPrimaryKeyMixin, TimestampMixin):

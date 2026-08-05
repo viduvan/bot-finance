@@ -9,7 +9,7 @@ from sqlalchemy import BigInteger, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.base import Base, INET_TYPE, JSON_TYPE, TimestampMixin
+from app.database.base import INET_TYPE, JSON_TYPE, Base, TimestampMixin
 
 
 class AuditLog(Base, TimestampMixin):

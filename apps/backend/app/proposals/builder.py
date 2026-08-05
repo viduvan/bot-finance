@@ -92,13 +92,18 @@ class ProposalBuilder:
             "technical_signal": (analysis_result.get("technical") or {}).get("signal", "NEUTRAL"),
             "flow_bias": (analysis_result.get("order_flow") or {}).get("flow_bias", "NEUTRAL"),
             "risk_rating": (analysis_result.get("risk_analysis") or {}).get("risk_rating", "HIGH"),
-            "critic_recommendation": (analysis_result.get("critic") or {}).get("final_recommendation", "HOLD"),
+            "critic_recommendation": (analysis_result.get("critic") or {}).get(
+                "final_recommendation", "HOLD"
+            ),
         }
 
         # Supporting reasons + warnings
         critic = analysis_result.get("critic") or {}
         risk_analysis = analysis_result.get("risk_analysis") or {}
-        supporting_reasons = [critic.get("summary", ""), critic.get("strongest_bullish_argument", "")]
+        supporting_reasons = [
+            critic.get("summary", ""),
+            critic.get("strongest_bullish_argument", ""),
+        ]
         supporting_reasons = [r for r in supporting_reasons if r]
 
         risk_warnings = risk_analysis.get("primary_risks", [])
@@ -110,9 +115,7 @@ class ProposalBuilder:
             estimated_profit = risk_amount * rr_ratio
 
         # Expiration
-        expires_at = datetime.now(UTC) + timedelta(
-            seconds=settings.proposal_expiration_seconds
-        )
+        expires_at = datetime.now(UTC) + timedelta(seconds=settings.proposal_expiration_seconds)
 
         # Confidence: normalize consensus score to 0-1
         confidence = min(1.0, max(0.0, abs(consensus_score) / 100))

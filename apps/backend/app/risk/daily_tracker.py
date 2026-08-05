@@ -126,6 +126,7 @@ class DailyLossTracker:
     @staticmethod
     def _redis_key(symbol: str) -> str:
         """Redis key for daily loss counter."""
-        from datetime import UTC, date
+        from datetime import date
+
         today = date.today().isoformat()
         return f"acta:daily_loss:{symbol}:{today}"

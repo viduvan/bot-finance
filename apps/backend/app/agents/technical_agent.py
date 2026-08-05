@@ -19,11 +19,11 @@ class TechnicalOutput(AgentOutput):
 
     signal: Literal["STRONG_BUY", "BUY", "NEUTRAL", "SELL", "STRONG_SELL"] = "NEUTRAL"
     conviction: int = Field(default=0, ge=0, le=100)
-    ema_alignment: str = "MIXED"          # BULLISH_STACK / BEARISH_STACK / MIXED
-    rsi_signal: str = "NEUTRAL"           # OVERSOLD / NEUTRAL / OVERBOUGHT / DIVERGENCE
-    macd_signal: str = "NEUTRAL"          # BULLISH_CROSS / BEARISH_CROSS / BULLISH / BEARISH
-    bb_signal: str = "NEUTRAL"            # NEAR_UPPER / NEAR_LOWER / SQUEEZE / EXPANSION
-    pattern_detected: str = ""            # Named pattern if found (e.g. 'EMA PULLBACK')
+    ema_alignment: str = "MIXED"  # BULLISH_STACK / BEARISH_STACK / MIXED
+    rsi_signal: str = "NEUTRAL"  # OVERSOLD / NEUTRAL / OVERBOUGHT / DIVERGENCE
+    macd_signal: str = "NEUTRAL"  # BULLISH_CROSS / BEARISH_CROSS / BULLISH / BEARISH
+    bb_signal: str = "NEUTRAL"  # NEAR_UPPER / NEAR_LOWER / SQUEEZE / EXPANSION
+    pattern_detected: str = ""  # Named pattern if found (e.g. 'EMA PULLBACK')
     entry_rationale: str = ""
     risk_note: str = ""
     key_levels: list[str] = Field(default_factory=list)
@@ -71,36 +71,36 @@ JSON format:
         return f"""Perform technical analysis for {symbol} (Market Regime: {regime}):
 
 PRICE ACTION:
-- Current Price: {f.get('close', 'N/A')}
-- Open: {f.get('open', 'N/A')} | High: {f.get('high', 'N/A')} | Low: {f.get('low', 'N/A')}
-- Candle Type: {f.get('candle_type', 'N/A')}
+- Current Price: {f.get("close", "N/A")}
+- Open: {f.get("open", "N/A")} | High: {f.get("high", "N/A")} | Low: {f.get("low", "N/A")}
+- Candle Type: {f.get("candle_type", "N/A")}
 
 EMA STRUCTURE (15m):
-- EMA 9: {f.get('ema_9', 'N/A')}
-- EMA 21: {f.get('ema_21', 'N/A')}
-- EMA 50: {f.get('ema_50', 'N/A')}
-- EMA 200: {f.get('ema_200', 'N/A')}
-- EMA 9>21 (bullish): {f.get('ema_9_21_bullish', 'N/A')}
-- EMA 21>50 (bullish): {f.get('ema_21_50_bullish', 'N/A')}
+- EMA 9: {f.get("ema_9", "N/A")}
+- EMA 21: {f.get("ema_21", "N/A")}
+- EMA 50: {f.get("ema_50", "N/A")}
+- EMA 200: {f.get("ema_200", "N/A")}
+- EMA 9>21 (bullish): {f.get("ema_9_21_bullish", "N/A")}
+- EMA 21>50 (bullish): {f.get("ema_21_50_bullish", "N/A")}
 
 MOMENTUM:
-- RSI(14): {f.get('rsi_14', 'N/A')} [{f.get('rsi_zone', 'N/A')}]
-- MACD Line: {f.get('macd_line', 'N/A')}
-- MACD Signal: {f.get('macd_signal', 'N/A')}
-- MACD Histogram: {f.get('macd_histogram', 'N/A')}
-- MACD Signal Type: {f.get('macd_signal_type', 'N/A')}
-- Stoch RSI K: {f.get('stoch_rsi_k', 'N/A')} | D: {f.get('stoch_rsi_d', 'N/A')}
+- RSI(14): {f.get("rsi_14", "N/A")} [{f.get("rsi_zone", "N/A")}]
+- MACD Line: {f.get("macd_line", "N/A")}
+- MACD Signal: {f.get("macd_signal", "N/A")}
+- MACD Histogram: {f.get("macd_histogram", "N/A")}
+- MACD Signal Type: {f.get("macd_signal_type", "N/A")}
+- Stoch RSI K: {f.get("stoch_rsi_k", "N/A")} | D: {f.get("stoch_rsi_d", "N/A")}
 
 BOLLINGER BANDS (20,2):
-- Upper: {f.get('bb_upper', 'N/A')} | Middle: {f.get('bb_middle', 'N/A')} | Lower: {f.get('bb_lower', 'N/A')}
-- %B: {f.get('bb_pct_b', 'N/A')} | Bandwidth: {f.get('bb_bandwidth', 'N/A')}
-- Price Position: {f.get('bb_position', 'N/A')}
+- Upper: {f.get("bb_upper", "N/A")} | Middle: {f.get("bb_middle", "N/A")} | Lower: {f.get("bb_lower", "N/A")}
+- %B: {f.get("bb_pct_b", "N/A")} | Bandwidth: {f.get("bb_bandwidth", "N/A")}
+- Price Position: {f.get("bb_position", "N/A")}
 
 STRUCTURE:
-- Trend: {f.get('trend_direction', 'N/A')}
-- Nearest Resistance: {f.get('nearest_resistance', 'N/A')}
-- Nearest Support: {f.get('nearest_support', 'N/A')}
-- S/R Zone: {f.get('sr_zone', 'N/A')}
+- Trend: {f.get("trend_direction", "N/A")}
+- Nearest Resistance: {f.get("nearest_resistance", "N/A")}
+- Nearest Support: {f.get("nearest_support", "N/A")}
+- S/R Zone: {f.get("sr_zone", "N/A")}
 
 Identify if an EMA Pullback or any high-probability setup is present."""
 

@@ -5,9 +5,8 @@ Repository bất đồng bộ sử dụng SQLAlchemy để lưu trữ và truy v
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import datetime
 
 import structlog
 from sqlalchemy import delete, func, select
@@ -38,20 +37,22 @@ class MarketDataRepository:
 
         values = []
         for c in candles:
-            values.append({
-                "symbol": symbol,
-                "timeframe": timeframe,
-                "open_time": c["open_time"],
-                "close_time": c["close_time"],
-                "open": c["open"],
-                "high": c["high"],
-                "low": c["low"],
-                "close": c["close"],
-                "volume": c["volume"],
-                "quote_volume": c.get("quote_volume"),
-                "trades_count": c.get("trades_count"),
-                "source": c.get("source", "BINANCE"),
-            })
+            values.append(
+                {
+                    "symbol": symbol,
+                    "timeframe": timeframe,
+                    "open_time": c["open_time"],
+                    "close_time": c["close_time"],
+                    "open": c["open"],
+                    "high": c["high"],
+                    "low": c["low"],
+                    "close": c["close"],
+                    "volume": c["volume"],
+                    "quote_volume": c.get("quote_volume"),
+                    "trades_count": c.get("trades_count"),
+                    "source": c.get("source", "BINANCE"),
+                }
+            )
 
         stmt = pg_insert(MarketCandle).values(values)
         stmt = stmt.on_conflict_do_update(
@@ -147,7 +148,9 @@ class MarketDataRepository:
         )
         return {row.timeframe: row.cnt for row in result.all()}
 
-    async def get_candle_time_range(self, symbol: str, timeframe: str) -> dict[str, datetime | None]:
+    async def get_candle_time_range(
+        self, symbol: str, timeframe: str
+    ) -> dict[str, datetime | None]:
         """Lấy thời gian nến cũ nhất và mới nhất trong DB.
 
         Trả về dict: {'oldest': datetime, 'newest': datetime, 'count': int}
@@ -157,8 +160,7 @@ class MarketDataRepository:
                 func.min(MarketCandle.open_time).label("oldest"),
                 func.max(MarketCandle.open_time).label("newest"),
                 func.count().label("count"),
-            )
-            .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
+            ).where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
         )
         row = result.one_or_none()
         if row is None:

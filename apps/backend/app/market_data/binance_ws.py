@@ -11,10 +11,12 @@ Quản lý các kết nối liên tục (persistent connections) tới luồng d
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 import structlog
 import websockets
@@ -87,10 +89,8 @@ class BinanceWebSocketManager:
         self._running = False
         for symbol, task in self._connections.items():
             task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await task
-            except asyncio.CancelledError:
-                pass
             logger.info("ws_connection_stopped", symbol=symbol)
 
         self._connections.clear()
@@ -156,7 +156,9 @@ class BinanceWebSocketManager:
                             logger.error("ws_message_error", symbol=symbol, error=str(e))
 
             except ConnectionClosed as e:
-                logger.warning("ws_connection_closed", symbol=symbol, code=e.code, reason=str(e.reason)[:100])
+                logger.warning(
+                    "ws_connection_closed", symbol=symbol, code=e.code, reason=str(e.reason)[:100]
+                )
             except asyncio.CancelledError:
                 logger.info("ws_connection_cancelled", symbol=symbol)
                 return
@@ -189,18 +191,20 @@ class BinanceWebSocketManager:
                     logger.error("kline_callback_error", error=str(e))
 
             # Phát tới frontend clients
-            await self._broadcast_to_frontend({
-                "type": "kline",
-                "symbol": symbol,
-                "timeframe": parsed["timeframe"],
-                "open": str(parsed["open"]),
-                "high": str(parsed["high"]),
-                "low": str(parsed["low"]),
-                "close": str(parsed["close"]),
-                "volume": str(parsed["volume"]),
-                "is_closed": parsed["is_closed"],
-                "timestamp": parsed["close_time"].isoformat(),
-            })
+            await self._broadcast_to_frontend(
+                {
+                    "type": "kline",
+                    "symbol": symbol,
+                    "timeframe": parsed["timeframe"],
+                    "open": str(parsed["open"]),
+                    "high": str(parsed["high"]),
+                    "low": str(parsed["low"]),
+                    "close": str(parsed["close"]),
+                    "volume": str(parsed["volume"]),
+                    "is_closed": parsed["is_closed"],
+                    "timestamp": parsed["close_time"].isoformat(),
+                }
+            )
 
         elif event_type == "24hrMiniTicker":
             parsed = self._parse_mini_ticker(symbol, data)
@@ -213,13 +217,15 @@ class BinanceWebSocketManager:
                     logger.error("ticker_callback_error", error=str(e))
 
             # Phát tới frontend clients
-            await self._broadcast_to_frontend({
-                "type": "ticker",
-                "symbol": symbol,
-                "price": str(parsed["close"]),
-                "volume_24h": str(parsed["quote_volume"]),
-                "timestamp": datetime.now(UTC).isoformat(),
-            })
+            await self._broadcast_to_frontend(
+                {
+                    "type": "ticker",
+                    "symbol": symbol,
+                    "price": str(parsed["close"]),
+                    "volume_24h": str(parsed["quote_volume"]),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
 
     def _parse_kline(self, symbol: str, data: dict) -> dict:
         """Phân tích tin nhắn kline WebSocket thành định dạng chuẩn hóa."""

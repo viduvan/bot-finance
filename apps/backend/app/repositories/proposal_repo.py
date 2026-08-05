@@ -8,10 +8,10 @@ from typing import Any
 from uuid import UUID
 
 import structlog
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.approval import ApprovalToken, ProposalApproval
+from app.models.approval import ProposalApproval
 from app.models.proposal import ProposalVersion, TradeProposal
 
 logger = structlog.get_logger(__name__)
@@ -32,7 +32,6 @@ def _sanitize_for_json(obj: Any) -> Any:
     return obj
 
 
-
 class ProposalRepository:
     """Data access layer for trade proposals, versions, and approvals."""
 
@@ -41,10 +40,9 @@ class ProposalRepository:
 
     async def create(self, proposal_data: dict[str, Any]) -> TradeProposal:
         """Create a new proposal in DRAFT status."""
-        proposal = TradeProposal(**{
-            k: v for k, v in proposal_data.items()
-            if hasattr(TradeProposal, k)
-        })
+        proposal = TradeProposal(
+            **{k: v for k, v in proposal_data.items() if hasattr(TradeProposal, k)}
+        )
         self.db.add(proposal)
         await self.db.flush()
 
@@ -66,9 +64,7 @@ class ProposalRepository:
 
     async def get_by_id(self, proposal_id: str | UUID) -> TradeProposal | None:
         """Get a proposal by ID."""
-        result = await self.db.execute(
-            select(TradeProposal).where(TradeProposal.id == proposal_id)
-        )
+        result = await self.db.execute(select(TradeProposal).where(TradeProposal.id == proposal_id))
         return result.scalar_one_or_none()
 
     async def list_active(self, symbol: str | None = None, limit: int = 20) -> list[TradeProposal]:
@@ -111,6 +107,7 @@ class ProposalRepository:
 
         # Validate transition
         from app.proposals.state_machine import ProposalStateMachine
+
         ProposalStateMachine().transition(old_status, new_status)
 
         previous = {"status": old_status}
@@ -146,7 +143,8 @@ class ProposalRepository:
     async def expire_pending_proposals(self) -> list[str]:
         """Expire all proposals past their expiration time. Returns list of expired IDs."""
         from app.proposals.expiration import ProposalExpirationService
-        svc = ProposalExpirationService()
+
+        ProposalExpirationService()
 
         result = await self.db.execute(
             select(TradeProposal).where(

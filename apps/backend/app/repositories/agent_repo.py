@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
 
 import structlog
 from sqlalchemy import select
@@ -117,9 +116,7 @@ class AgentWorkflowRepository:
 
         return run
 
-    async def get_recent_workflows(
-        self, symbol: str, limit: int = 10
-    ) -> list[AgentWorkflow]:
+    async def get_recent_workflows(self, symbol: str, limit: int = 10) -> list[AgentWorkflow]:
         """Get recent analysis workflows for a symbol."""
         result = await self.db.execute(
             select(AgentWorkflow)

@@ -5,13 +5,12 @@ All enums are string-based for JSON serialization and database storage.
 
 from __future__ import annotations
 
-from enum import Enum
-
+from enum import StrEnum
 
 # ── User & Auth ──────────────────────────────────────────────────
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """User roles for RBAC authorization."""
 
     ADMIN = "ADMIN"
@@ -21,7 +20,7 @@ class UserRole(str, Enum):
     EXECUTION_SERVICE = "EXECUTION_SERVICE"
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     """Granular permissions for authorization."""
 
     VIEW_MARKET = "VIEW_MARKET"
@@ -68,7 +67,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
 # ── Trading ──────────────────────────────────────────────────────
 
 
-class TradingEnvironment(str, Enum):
+class TradingEnvironment(StrEnum):
     """Trading environment type."""
 
     PAPER = "PAPER"
@@ -76,21 +75,21 @@ class TradingEnvironment(str, Enum):
     BACKTEST = "BACKTEST"
 
 
-class OrderSide(str, Enum):
+class OrderSide(StrEnum):
     """Order direction."""
 
     BUY = "BUY"
     SELL = "SELL"
 
 
-class OrderType(str, Enum):
+class OrderType(StrEnum):
     """Order type."""
 
     LIMIT = "LIMIT"
     MARKET = "MARKET"
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     """Exchange order status."""
 
     PENDING = "PENDING"
@@ -106,7 +105,7 @@ class OrderStatus(str, Enum):
 # ── Proposals ────────────────────────────────────────────────────
 
 
-class Recommendation(str, Enum):
+class Recommendation(StrEnum):
     """Trading recommendation from signal aggregator."""
 
     BUY = "BUY"
@@ -115,7 +114,7 @@ class Recommendation(str, Enum):
     NO_TRADE = "NO_TRADE"
 
 
-class ProposalStatus(str, Enum):
+class ProposalStatus(StrEnum):
     """Trade proposal lifecycle status.
 
     State machine transitions are enforced in proposals/state_machine.py
@@ -124,8 +123,8 @@ class ProposalStatus(str, Enum):
     DRAFT = "DRAFT"
     ANALYZING = "ANALYZING"
     RISK_REJECTED = "RISK_REJECTED"
-    PENDING_REVIEW = "PENDING_REVIEW"       # Awaiting human decision (used by service & state_machine)
-    WAITING_FOR_HUMAN = "WAITING_FOR_HUMAN" # Alias — kept for forward-compatibility
+    PENDING_REVIEW = "PENDING_REVIEW"  # Awaiting human decision (used by service & state_machine)
+    WAITING_FOR_HUMAN = "WAITING_FOR_HUMAN"  # Alias — kept for forward-compatibility
     EDITED_BY_HUMAN = "EDITED_BY_HUMAN"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -139,7 +138,7 @@ class ProposalStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class ApprovalDecision(str, Enum):
+class ApprovalDecision(StrEnum):
     """Human decision on a proposal."""
 
     APPROVE = "APPROVE"
@@ -147,7 +146,7 @@ class ApprovalDecision(str, Enum):
     EDIT = "EDIT"
 
 
-class ApprovalTokenStatus(str, Enum):
+class ApprovalTokenStatus(StrEnum):
     """Approval token lifecycle."""
 
     ACTIVE = "ACTIVE"
@@ -159,7 +158,7 @@ class ApprovalTokenStatus(str, Enum):
 # ── Agents ───────────────────────────────────────────────────────
 
 
-class AgentName(str, Enum):
+class AgentName(StrEnum):
     """Multi-agent system agent identifiers."""
 
     MARKET_REGIME = "market_regime"
@@ -169,7 +168,7 @@ class AgentName(str, Enum):
     CRITIC = "critic"
 
 
-class AgentWorkflowStatus(str, Enum):
+class AgentWorkflowStatus(StrEnum):
     """Agent workflow execution status."""
 
     PENDING = "PENDING"
@@ -179,7 +178,7 @@ class AgentWorkflowStatus(str, Enum):
     TIMEOUT = "TIMEOUT"
 
 
-class AgentRunStatus(str, Enum):
+class AgentRunStatus(StrEnum):
     """Individual agent run status."""
 
     PENDING = "PENDING"
@@ -190,7 +189,7 @@ class AgentRunStatus(str, Enum):
     SKIPPED = "SKIPPED"
 
 
-class MarketRegime(str, Enum):
+class MarketRegime(StrEnum):
     """Market regime classifications."""
 
     UPTREND = "UPTREND"
@@ -202,7 +201,7 @@ class MarketRegime(str, Enum):
     MEAN_REVERSION = "MEAN_REVERSION"
 
 
-class CriticVerdict(str, Enum):
+class CriticVerdict(StrEnum):
     """Critic agent verdict on a proposal."""
 
     PROCEED = "PROCEED"
@@ -210,7 +209,7 @@ class CriticVerdict(str, Enum):
     REJECT = "REJECT"
 
 
-class LiquidityStatus(str, Enum):
+class LiquidityStatus(StrEnum):
     """Order book liquidity assessment."""
 
     NORMAL = "NORMAL"
@@ -222,14 +221,14 @@ class LiquidityStatus(str, Enum):
 # ── Risk ─────────────────────────────────────────────────────────
 
 
-class RiskDecision(str, Enum):
+class RiskDecision(StrEnum):
     """Risk gate decision."""
 
     ALLOW = "ALLOW"
     DENY = "DENY"
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Risk classification level."""
 
     LOW = "LOW"
@@ -238,7 +237,7 @@ class RiskLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class RiskEventType(str, Enum):
+class RiskEventType(StrEnum):
     """Types of risk events."""
 
     DAILY_LOSS_EXCEEDED = "DAILY_LOSS_EXCEEDED"
@@ -261,7 +260,7 @@ class RiskEventType(str, Enum):
 # ── Market Data ──────────────────────────────────────────────────
 
 
-class Timeframe(str, Enum):
+class Timeframe(StrEnum):
     """Supported candlestick timeframes."""
 
     M15 = "15m"
@@ -270,7 +269,7 @@ class Timeframe(str, Enum):
     D1 = "1d"
 
 
-class DataSource(str, Enum):
+class DataSource(StrEnum):
     """Market data source."""
 
     BINANCE = "BINANCE"
@@ -280,7 +279,7 @@ class DataSource(str, Enum):
 # ── Notifications ────────────────────────────────────────────────
 
 
-class NotificationChannel(str, Enum):
+class NotificationChannel(StrEnum):
     """Notification delivery channel."""
 
     DASHBOARD = "DASHBOARD"
@@ -288,7 +287,7 @@ class NotificationChannel(str, Enum):
     EMAIL = "EMAIL"
 
 
-class NotificationEventType(str, Enum):
+class NotificationEventType(StrEnum):
     """Notification event types."""
 
     NEW_PROPOSAL = "NEW_PROPOSAL"
@@ -307,7 +306,7 @@ class NotificationEventType(str, Enum):
 # ── Audit ────────────────────────────────────────────────────────
 
 
-class AuditAction(str, Enum):
+class AuditAction(StrEnum):
     """Auditable actions (append-only log)."""
 
     USER_LOGIN = "USER_LOGIN"
@@ -337,7 +336,7 @@ class AuditAction(str, Enum):
 # ── Backtest ─────────────────────────────────────────────────────
 
 
-class BacktestStatus(str, Enum):
+class BacktestStatus(StrEnum):
     """Backtest execution status."""
 
     PENDING = "PENDING"
@@ -346,7 +345,7 @@ class BacktestStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class PositionStatus(str, Enum):
+class PositionStatus(StrEnum):
     """Position tracking status."""
 
     OPEN = "OPEN"
@@ -354,7 +353,7 @@ class PositionStatus(str, Enum):
     LIQUIDATED = "LIQUIDATED"
 
 
-class CloseReason(str, Enum):
+class CloseReason(StrEnum):
     """Reason for closing a position."""
 
     TAKE_PROFIT = "TAKE_PROFIT"
@@ -367,7 +366,7 @@ class CloseReason(str, Enum):
 # ── LLM ──────────────────────────────────────────────────────────
 
 
-class LLMProvider(str, Enum):
+class LLMProvider(StrEnum):
     """Supported LLM providers."""
 
     OLLAMA = "ollama"
@@ -378,7 +377,7 @@ class LLMProvider(str, Enum):
 # ── Analysis Trigger ─────────────────────────────────────────────
 
 
-class AnalysisTriggerType(str, Enum):
+class AnalysisTriggerType(StrEnum):
     """What triggered the analysis workflow."""
 
     SCHEDULED = "SCHEDULED"

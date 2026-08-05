@@ -47,6 +47,7 @@ async def list_proposals(
 ) -> dict:
     """List proposals with optional filters."""
     from app.repositories.proposal_repo import ProposalRepository
+
     repo = ProposalRepository(db)
     proposals = await repo.list_all(symbol=symbol, status=status, limit=limit)
     return {
@@ -63,6 +64,7 @@ async def list_active_proposals(
 ) -> dict:
     """List active proposals (DRAFT, PENDING_REVIEW, RECONFIRM_REQUIRED)."""
     from app.repositories.proposal_repo import ProposalRepository
+
     repo = ProposalRepository(db)
     proposals = await repo.list_active(symbol=symbol)
     return {
@@ -79,6 +81,7 @@ async def get_proposal(
 ) -> dict:
     """Get a specific proposal by ID."""
     from app.repositories.proposal_repo import ProposalRepository
+
     repo = ProposalRepository(db)
     proposal = await repo.get_by_id(proposal_id)
     if not proposal:
@@ -97,6 +100,7 @@ async def issue_approval_token(
     Token expires in 30 seconds and ties to the current proposal price/qty.
     """
     from app.proposals.service import ProposalService
+
     svc = ProposalService(db)
     try:
         result = await svc.issue_approval_token(
@@ -123,6 +127,7 @@ async def approve_proposal(
     - Current market price for drift check
     """
     from app.proposals.service import ProposalService
+
     svc = ProposalService(db)
 
     try:
@@ -135,9 +140,12 @@ async def approve_proposal(
             user_agent=request.headers.get("user-agent"),
         )
         await record_audit(
-            db, action="PROPOSAL_APPROVED", service="proposals",
+            db,
+            action="PROPOSAL_APPROVED",
+            service="proposals",
             user_id=str(user.id),
-            resource_type="proposal", resource_id=proposal_id,
+            resource_type="proposal",
+            resource_id=proposal_id,
             details={"current_price": body.current_price},
             request=request,
         )
@@ -156,6 +164,7 @@ async def reject_proposal(
 ) -> dict:
     """Reject a proposal."""
     from app.proposals.service import ProposalService
+
     svc = ProposalService(db)
     try:
         result = await svc.reject(
@@ -165,9 +174,12 @@ async def reject_proposal(
             ip_address=request.client.host if request.client else None,
         )
         await record_audit(
-            db, action="PROPOSAL_REJECTED", service="proposals",
+            db,
+            action="PROPOSAL_REJECTED",
+            service="proposals",
             user_id=str(user.id),
-            resource_type="proposal", resource_id=proposal_id,
+            resource_type="proposal",
+            resource_id=proposal_id,
             details={"reason": body.reason},
             request=request,
         )
@@ -190,15 +202,20 @@ async def edit_proposal(
     2. Invalidate any outstanding approval tokens
     """
     from app.proposals.service import ProposalService
+
     svc = ProposalService(db)
 
     # Only include non-None fields
     edited = {
-        k: v for k, v in {
+        k: v
+        for k, v in {
             "suggested_price": Decimal(body.suggested_price) if body.suggested_price else None,
-            "suggested_quantity": Decimal(body.suggested_quantity) if body.suggested_quantity else None,
+            "suggested_quantity": Decimal(body.suggested_quantity)
+            if body.suggested_quantity
+            else None,
             "stop_loss_price": Decimal(body.stop_loss_price) if body.stop_loss_price else None,
-        }.items() if v is not None
+        }.items()
+        if v is not None
     }
 
     if not edited:
@@ -222,6 +239,7 @@ async def cancel_proposal(
 ) -> dict:
     """Cancel a proposal."""
     from app.proposals.service import ProposalService
+
     svc = ProposalService(db)
     try:
         return await svc.cancel(proposal_id=proposal_id, user_id=str(user.id))
@@ -255,6 +273,7 @@ async def reanalyze_proposal(
 def _serialize(proposal) -> dict:
     """Serialize a TradeProposal ORM object to API response dict."""
     from app.proposals.expiration import ProposalExpirationService
+
     svc = ProposalExpirationService()
     p_dict = {
         "id": str(proposal.id),
@@ -264,11 +283,15 @@ def _serialize(proposal) -> dict:
         "status": proposal.status,
         "current_price": str(proposal.current_price) if proposal.current_price else None,
         "suggested_price": str(proposal.suggested_price) if proposal.suggested_price else None,
-        "suggested_quantity": str(proposal.suggested_quantity) if proposal.suggested_quantity else None,
+        "suggested_quantity": str(proposal.suggested_quantity)
+        if proposal.suggested_quantity
+        else None,
         "suggested_order_type": proposal.suggested_order_type,
         "stop_loss_price": str(proposal.stop_loss_price) if proposal.stop_loss_price else None,
         "take_profit_prices": proposal.take_profit_prices,
-        "risk_reward_ratio": str(proposal.risk_reward_ratio) if proposal.risk_reward_ratio else None,
+        "risk_reward_ratio": str(proposal.risk_reward_ratio)
+        if proposal.risk_reward_ratio
+        else None,
         "estimated_fee": str(proposal.estimated_fee) if proposal.estimated_fee else None,
         "confidence": str(proposal.confidence) if proposal.confidence else None,
         "agent_consensus": proposal.agent_consensus,
