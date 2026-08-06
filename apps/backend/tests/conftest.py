@@ -6,17 +6,28 @@ import asyncio
 import os
 from collections.abc import AsyncGenerator
 
-import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+# ── Override env BEFORE importing app ──────────────────────────────
+# The app reads DATABASE_URL at import time. In CI, DATABASE_URL points to
+# a PostgreSQL test DB that may not exist yet. Since our tests use SQLite
+# via dependency injection (db_session fixture), we force-override DATABASE_URL
+# to prevent app startup from failing when connecting to a non-existent PG DB.
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
 
-from app.database.base import Base
-from app.database.session import get_db_session
-from app.main import app
+import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-# Use DATABASE_URL from env (CI uses PostgreSQL), fallback to SQLite for local dev
-TEST_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+from app.database.base import Base  # noqa: E402
+from app.database.session import get_db_session  # noqa: E402
+from app.main import app  # noqa: E402
+
+# Always use SQLite for test fixtures (fast, no external dependency)
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 
 @pytest.fixture(scope="session")
